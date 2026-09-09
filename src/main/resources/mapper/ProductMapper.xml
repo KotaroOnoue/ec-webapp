@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ec.repository.ProductRepository">
+
+    <resultMap id="productResultMap" type="com.example.ec.repository.entity.ProductEntity">
+        <id property="productId" column="product_id" />
+        <result property="name" column="name" />
+        <result property="description" column="description" />
+        <result property="price" column="price" />
+        <result property="stock" column="stock" />
+        <result property="status" column="status" />
+        <result property="imageUrl" column="image_url" />
+    </resultMap>
+
+    <select id="findOnSaleProducts" resultMap="productResultMap">
+        SELECT
+            product_id,
+            name,
+            description,
+            price,
+            stock,
+            status,
+            image_url
+        FROM
+            products
+        WHERE
+            status = 'ON_SALE'
+        ORDER BY
+            product_id
+    </select>
+
+    <select id="findByProductId" resultMap="productResultMap" parameterType="long">
+        SELECT
+            product_id,
+            name,
+            description,
+            price,
+            stock,
+            status,
+            image_url
+        FROM
+            products
+        WHERE
+            product_id = #{productId}
+    </select>
+</mapper>

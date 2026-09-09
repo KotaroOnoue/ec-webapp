@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品一覧</title>
+  <style>
+    :root {
+      --bg: #f4ede4;
+      --bg-accent: #fffaf4;
+      --surface: rgba(255, 250, 244, 0.88);
+      --surface-strong: #ffffff;
+      --line: rgba(122, 82, 43, 0.16);
+      --text: #26170a;
+      --muted: #6f5a48;
+      --brand: #b85c38;
+      --brand-strong: #8f3f20;
+      --success: #276749;
+      --danger: #a53f3f;
+      --shadow: 0 22px 50px rgba(83, 49, 20, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic", "Hiragino Sans", "Meiryo", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 214, 170, 0.75), transparent 34%),
+        radial-gradient(circle at top right, rgba(184, 92, 56, 0.14), transparent 26%),
+        linear-gradient(160deg, var(--bg) 0%, #f9f6f0 54%, #efe3d5 100%);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      z-index: -1;
+      border-radius: 999px;
+      filter: blur(10px);
+      opacity: 0.72;
+    }
+
+    body::before {
+      width: 18rem;
+      height: 18rem;
+      top: 6rem;
+      left: -6rem;
+      background: rgba(255, 224, 196, 0.95);
+    }
+
+    body::after {
+      width: 20rem;
+      height: 20rem;
+      right: -7rem;
+      bottom: 8rem;
+      background: rgba(214, 145, 96, 0.18);
+    }
+
+    .page-shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 56px;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 16px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background: rgba(255, 248, 240, 0.84);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .site-title {
+      margin: 0;
+      font-size: clamp(1.1rem, 2vw, 1.45rem);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    .cart-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      color: var(--text);
+      text-decoration: none;
+      background: var(--surface-strong);
+      border: 1px solid rgba(122, 82, 43, 0.12);
+      box-shadow: 0 10px 24px rgba(76, 46, 24, 0.09);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .cart-link:hover,
+    .cart-link:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(76, 46, 24, 0.14);
+    }
+
+    .cart-count {
+      display: inline-grid;
+      place-items: center;
+      min-width: 1.8rem;
+      height: 1.8rem;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    main {
+      margin-top: 28px;
+    }
+
+    .hero {
+      display: grid;
+      gap: 18px;
+      padding: 28px;
+      border: 1px solid rgba(122, 82, 43, 0.12);
+      border-radius: calc(var(--radius-xl) + 4px);
+      background: linear-gradient(135deg, rgba(255, 250, 244, 0.82), rgba(255, 255, 255, 0.62));
+      box-shadow: var(--shadow);
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(184, 92, 56, 0.1);
+      color: var(--brand-strong);
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .page-title {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 1.05;
+      letter-spacing: 0.04em;
+    }
+
+    .hero-copy {
+      margin: 0;
+      max-width: 52rem;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 22px;
+      margin-top: 28px;
+    }
+
+    .product-card {
+      overflow: hidden;
+      border: 1px solid rgba(122, 82, 43, 0.12);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: 0 18px 40px rgba(71, 40, 17, 0.1);
+      transition: transform 0.24s ease, box-shadow 0.24s ease;
+    }
+
+    .product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 22px 44px rgba(71, 40, 17, 0.14);
+    }
+
+    .product-image-wrap {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(240, 231, 221, 0.9));
+    }
+
+    .product-image-wrap::after {
+      content: "";
+      position: absolute;
+      inset: auto 12px 12px auto;
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.28);
+      filter: blur(16px);
+    }
+
+    .product-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .product-content {
+      display: grid;
+      gap: 14px;
+      padding: 20px;
+    }
+
+    .product-name {
+      margin: 0;
+      font-size: 1.24rem;
+      font-weight: 800;
+    }
+
+    .product-price {
+      margin: 0;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--brand-strong);
+    }
+
+    .stock-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+
+    .stock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      background: rgba(39, 103, 73, 0.12);
+      color: var(--success);
+    }
+
+    .stock-badge.is-out {
+      background: rgba(165, 63, 63, 0.12);
+      color: var(--danger);
+    }
+
+    .stock-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.5);
+    }
+
+    .button-group {
+      display: grid;
+      gap: 10px;
+    }
+
+    .action-button {
+      width: 100%;
+      border: 0;
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .action-button:hover:not(:disabled),
+    .action-button:focus-visible:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .action-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+    }
+
+    .action-button.secondary {
+      color: var(--text);
+      background: #fff;
+      border: 1px solid rgba(122, 82, 43, 0.12);
+    }
+
+    .action-button.primary {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+      box-shadow: 0 12px 24px rgba(143, 63, 32, 0.28);
+    }
+
+    .action-button.ghost {
+      color: var(--brand-strong);
+      background: rgba(184, 92, 56, 0.09);
+      border: 1px solid rgba(184, 92, 56, 0.12);
+    }
+
+    .card-footnote {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .mock-cart-panel {
+      margin-top: 28px;
+      padding: 22px;
+      border: 1px dashed rgba(122, 82, 43, 0.28);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 250, 244, 0.62);
+      color: var(--muted);
+    }
+
+    .mock-cart-panel h2 {
+      margin: 0 0 10px;
+      color: var(--text);
+      font-size: 1.1rem;
+    }
+
+    .mock-cart-panel p {
+      margin: 0;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 720px) {
+      .page-shell {
+        width: min(100% - 20px, 1180px);
+        padding-top: 12px;
+      }
+
+      .site-header {
+        top: 10px;
+        padding: 16px;
+      }
+
+      .hero,
+      .product-content,
+      .mock-cart-panel {
+        padding: 18px;
+      }
+
+      .page-title {
+        font-size: 2.1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <h1 class="site-title">ECサイト</h1>
+      <a class="cart-link" href="#cart-preview" aria-label="カートを見る">
+        <span>カートを見る</span>
+        <span class="cart-count" id="cart-count">0</span>
+      </a>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="product-list-title">
+        <span class="hero-tag">PRODUCT MOCKUP</span>
+        <h2 class="page-title" id="product-list-title">商品一覧</h2>
+        <p class="hero-copy">
+          商品一覧画面の構成を確認するためのモックアップです。詳細画面やカート画面はまだ未作成とし、一覧上でカード表示と主要な操作導線だけを確認できるようにしています。
+        </p>
+      </section>
+
+      <section class="product-grid" aria-label="商品一覧">
+        <article class="product-card" data-product-name="ワイヤレスイヤホン" data-in-stock="true">
+          <div class="product-image-wrap">
+            <img class="product-image" src="../src/main/resources/static/images/products/1.png" alt="ワイヤレスイヤホンの商品画像">
+          </div>
+          <div class="product-content">
+            <h3 class="product-name">ワイヤレスイヤホン</h3>
+            <p class="product-price">¥5,980</p>
+            <div class="stock-row">
+              <span class="stock-badge"><span class="stock-dot"></span>在庫あり</span>
+            </div>
+            <div class="button-group">
+              <button class="action-button secondary" type="button" data-action="detail">詳細を見る</button>
+              <button class="action-button primary add-to-cart" type="button" data-action="cart">カートに追加</button>
+              <button class="action-button ghost" type="button" data-action="view-cart">カートを見る</button>
+            </div>
+            <p class="card-footnote">数量は 1 点まで追加できるモックです。</p>
+          </div>
+        </article>
+
+        <article class="product-card" data-product-name="ゲーミングマウス" data-in-stock="true">
+          <div class="product-image-wrap">
+            <img class="product-image" src="../src/main/resources/static/images/products/2.png" alt="ゲーミングマウスの商品画像">
+          </div>
+          <div class="product-content">
+            <h3 class="product-name">ゲーミングマウス</h3>
+            <p class="product-price">¥3,980</p>
+            <div class="stock-row">
+              <span class="stock-badge"><span class="stock-dot"></span>在庫あり</span>
+            </div>
+            <div class="button-group">
+              <button class="action-button secondary" type="button" data-action="detail">詳細を見る</button>
+              <button class="action-button primary add-to-cart" type="button" data-action="cart">カートに追加</button>
+              <button class="action-button ghost" type="button" data-action="view-cart">カートを見る</button>
+            </div>
+            <p class="card-footnote">数量は 1 点まで追加できるモックです。</p>
+          </div>
+        </article>
+
+        <article class="product-card" data-product-name="USB-Cハブ" data-in-stock="false">
+          <div class="product-image-wrap">
+            <img class="product-image" src="../src/main/resources/static/images/products/3.png" alt="USB-Cハブの商品画像">
+          </div>
+          <div class="product-content">
+            <h3 class="product-name">USB-Cハブ</h3>
+            <p class="product-price">¥2,980</p>
+            <div class="stock-row">
+              <span class="stock-badge is-out"><span class="stock-dot"></span>在庫なし</span>
+            </div>
+            <div class="button-group">
+              <button class="action-button secondary" type="button" data-action="detail">詳細を見る</button>
+              <button class="action-button primary add-to-cart" type="button" data-action="cart" disabled>カートに追加</button>
+              <button class="action-button ghost" type="button" data-action="view-cart">カートを見る</button>
+            </div>
+            <p class="card-footnote">在庫なしの商品はカートに追加できない表示にしています。</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="mock-cart-panel" id="cart-preview" aria-label="カート導線メモ">
+        <h2>カート導線メモ</h2>
+        <p>
+          「カートを見る」はこのモック内の案内エリアへ移動します。カート詳細画面は未作成です。
+        </p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      const cartCount = document.getElementById('cart-count');
+      const addedProducts = new Set();
+
+      document.addEventListener('click', function (event) {
+        const button = event.target.closest('button');
+        if (!button) {
+          return;
+        }
+
+        const productCard = button.closest('.product-card');
+        if (!productCard) {
+          return;
+        }
+
+        const productName = productCard.dataset.productName || '商品';
+        const action = button.dataset.action;
+
+        if (action === 'detail') {
+          window.alert(productName + ' の詳細画面は未作成です。');
+          return;
+        }
+
+        if (action === 'view-cart') {
+          document.getElementById('cart-preview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        }
+
+        if (action === 'cart') {
+          if (addedProducts.has(productName)) {
+            window.alert(productName + ' はすでに 1 点追加済みです。');
+            return;
+          }
+
+          addedProducts.add(productName);
+          cartCount.textContent = String(addedProducts.size);
+          button.textContent = '追加済み (1)';
+          button.disabled = true;
+        }
+      });
+    }());
+  </script>
+</body>
+</html>

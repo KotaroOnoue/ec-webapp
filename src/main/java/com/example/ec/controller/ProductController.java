@@ -1,0 +1,96 @@
+package com.example.ec.controller;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.SessionAttributes;
+
+import com.example.ec.controller.form.CartAddForm;
+import com.example.ec.service.ProductService;
+
+import jakarta.validation.Valid;
+
+/**
+ * 商品一覧画面を制御するControllerです。
+ */
+@Controller
+@SessionAttributes("cart")
+public class ProductController {
+
+    /** 商品Serviceです。 */
+    @Autowired
+    private ProductService productService;
+
+    /**
+     * セッション上のカート情報を初期化します。
+     *
+     * @return カート情報
+     */
+    @ModelAttribute("cart")
+    public Map<Long, Integer> createCart() {
+        return new LinkedHashMap<>();
+    }
+
+    /**
+     * 商品一覧画面を表示します。
+     *
+     * @param cart セッション上のカート
+     * @param model 画面モデル
+     * @return テンプレート名
+     */
+    @GetMapping("/products")
+    public String showProducts(@ModelAttribute("cart") Map<Long, Integer> cart, Model model) {
+        preparePageModel(cart, model);
+        if (!model.containsAttribute("cartAddForm")) {
+            CartAddForm cartAddForm = new CartAddForm();
+            cartAddForm.setQuantity(1);
+            model.addAttribute("cartAddForm", cartAddForm);
+        }
+        return "products";
+    }
+
+    /**
+     * 商品をカートへ追加します。
+     *
+     * @param cartAddForm カート追加フォーム
+     * @param bindingResult バリデーション結果
+     * @param cart セッション上のカート
+     * @param model 画面モデル
+     * @return 遷移先テンプレート名
+     */
+    @PostMapping("/products/cart")
+    public String addToCart(
+            @Valid @ModelAttribute("cartAddForm") CartAddForm cartAddForm,
+            BindingResult bindingResult,
+            @ModelAttribute("cart") Map<Long, Integer> cart,
+            Model model) {
+        if (bindingResult.hasErrors()) {
+            preparePageModel(cart, model);
+            return "products";
+        }
+
+        int currentQuantity = cart.getOrDefault(cartAddForm.getProductId(), 0);
+        productService.validateAddToCart(cartAddForm.getProductId(), currentQuantity, cartAddForm.getQuantity());
+        cart.put(cartAddForm.getProductId(), currentQuantity + cartAddForm.getQuantity());
+
+        return "redirect:/products";
+    }
+
+    /**
+     * 商品一覧画面に必要な共通モデルを設定します。
+     *
+     * @param cart セッション上のカート
+     * @param model 画面モデル
+     */
+    public void preparePageModel(Map<Long, Integer> cart, Model model) {
+        model.addAttribute("products", productService.getOnSaleProducts());
+        model.addAttribute("cartItemCount", cart.values().stream().mapToInt(Integer::intValue).sum());
+    }
+}
