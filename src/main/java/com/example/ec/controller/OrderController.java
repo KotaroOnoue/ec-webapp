@@ -9,6 +9,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
@@ -61,6 +62,23 @@ public class OrderController {
     }
 
     /**
+     * 注文完了画面を表示します。
+     *
+     * @param orderId 注文ID
+     * @param model 画面モデル
+     * @return テンプレート名またはリダイレクト先
+     */
+    @GetMapping("/orders/complete/{orderId}")
+    public String showOrderComplete(@PathVariable("orderId") Long orderId, Model model) {
+        var order = orderService.getOrderComplete(orderId);
+        if (order == null) {
+            return "redirect:/products";
+        }
+        model.addAttribute("order", order);
+        return "order-complete";
+    }
+
+    /**
      * 注文を確定します。
      *
      * @param orderForm 注文フォーム
@@ -81,9 +99,9 @@ public class OrderController {
             return "order-confirm";
         }
 
-        orderService.placeOrder(orderForm);
+        Long orderId = orderService.placeOrder(orderForm);
         cart.clear();
-        return "redirect:/orders/complete";
+        return "redirect:/orders/complete/" + orderId;
     }
 
     /**

@@ -42,4 +42,16 @@ class OrderRepositoryTest {
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM orders WHERE order_id = 1", Integer.class);
         assertEquals(1, count);
     }
+
+    /**
+     * 注文IDを指定して注文情報を取得できることを検証します。
+     */
+    @Test
+    void findByOrderIdReturnsOrder() {
+        orderRepository.insertOrder(5L, "山田 花子", "1600001", "東京都新宿区1-2-3", "09012345678", 5000, LocalDateTime.now());
+
+        var order = orderRepository.findByOrderId(5L);
+
+        assertEquals(5L, order.getOrderId());
+    }
 }

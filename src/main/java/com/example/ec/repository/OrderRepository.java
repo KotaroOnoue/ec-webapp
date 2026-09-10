@@ -5,11 +5,21 @@ import java.time.LocalDateTime;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.example.ec.repository.entity.OrderEntity;
+
 /**
  * 注文情報を保存するRepositoryです。
  */
 @Mapper
 public interface OrderRepository {
+
+    /**
+     * 注文IDを指定して注文情報を取得します。
+     *
+     * @param orderId 注文ID
+     * @return 注文情報
+     */
+    OrderEntity findByOrderId(@Param("orderId") Long orderId);
 
     /**
      * 次に採番する注文IDを取得します。

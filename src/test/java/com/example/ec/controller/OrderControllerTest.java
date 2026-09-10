@@ -64,6 +64,30 @@ class OrderControllerTest {
                 .andExpect(content().string(containsString("注文を確定する")));
     }
 
+        /**
+         * 注文完了画面に注文番号が表示されることを検証します。
+         *
+         * @throws Exception テスト失敗時
+         */
+        @Test
+        void showOrderCompleteDisplaysOrderId() throws Exception {
+        jdbcTemplate.update(
+            "INSERT INTO orders (order_id, customer_name, postal_code, adress, phone_number, total_amount, order_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+            10L,
+            "山田 太郎",
+            "1500001",
+            "東京都千代田区1-1-1",
+            "0312345678",
+            12000);
+
+        mockMvc.perform(get("/orders/complete/10"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("order-complete"))
+            .andExpect(content().string(containsString("注文完了")))
+            .andExpect(content().string(containsString("10")))
+            .andExpect(content().string(containsString("商品一覧に戻る")));
+        }
+
     /**
      * 注文確定時にordersへ保存し、注文完了画面へリダイレクトすることを検証します。
      *
@@ -78,7 +102,7 @@ class OrderControllerTest {
                         .param("address", "東京都千代田区1-1-1")
                         .param("phoneNumber", "0312345678"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/orders/complete"));
+                .andExpect(redirectedUrl("/orders/complete/1"));
 
         Integer orderCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM orders", Integer.class);
         assertEquals(1, orderCount);

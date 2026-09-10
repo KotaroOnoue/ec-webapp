@@ -53,4 +53,23 @@ class OrderServiceTest {
         assertEquals(1, orderCount);
         assertEquals(0, cartCount);
     }
+
+    /**
+     * 注文完了画面表示用に注文番号を取得できることを検証します。
+     */
+    @Test
+    void getOrderCompleteReturnsOrderId() {
+        jdbcTemplate.update(
+                "INSERT INTO orders (order_id, customer_name, postal_code, adress, phone_number, total_amount, order_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                7L,
+                "山田 太郎",
+                "1500001",
+                "東京都千代田区1-1-1",
+                "0312345678",
+                9800);
+
+        var order = orderService.getOrderComplete(7L);
+
+        assertEquals(7L, order.getOrderId());
+    }
 }

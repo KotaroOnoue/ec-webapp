@@ -4,6 +4,19 @@
     "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.ec.repository.OrderRepository">
 
+    <select id="findByOrderId" resultType="com.example.ec.repository.entity.OrderEntity">
+        SELECT
+            order_id AS orderId,
+            customer_name AS customerName,
+            postal_code AS postalCode,
+            adress AS address,
+            phone_number AS phoneNumber,
+            total_amount AS totalAmount,
+            order_at AS orderAt
+        FROM orders
+        WHERE order_id = #{orderId}
+    </select>
+
     <select id="findNextOrderId" resultType="long">
         SELECT COALESCE(MAX(order_id), 0) + 1
         FROM orders

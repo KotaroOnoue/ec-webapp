@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import com.example.ec.controller.form.OrderForm;
 import com.example.ec.repository.CartRepository;
 import com.example.ec.repository.OrderRepository;
+import com.example.ec.repository.entity.OrderEntity;
+import com.example.ec.service.model.OrderCompleteModel;
 
 /**
  * 注文に関するビジネスロジックを扱うServiceです。
@@ -50,5 +52,22 @@ public class OrderService {
                 LocalDateTime.now());
         cartRepository.deleteAllCartItems();
         return orderId;
+    }
+
+    /**
+     * 注文完了画面表示用の注文情報を取得します。
+     *
+     * @param orderId 注文ID
+     * @return 注文完了画面表示用モデル。存在しない場合はnull
+     */
+    public OrderCompleteModel getOrderComplete(Long orderId) {
+        OrderEntity orderEntity = orderRepository.findByOrderId(orderId);
+        if (orderEntity == null) {
+            return null;
+        }
+
+        OrderCompleteModel orderCompleteModel = new OrderCompleteModel();
+        orderCompleteModel.setOrderId(orderEntity.getOrderId());
+        return orderCompleteModel;
     }
 }
