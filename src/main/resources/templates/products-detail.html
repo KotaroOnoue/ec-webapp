@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品詳細</title>
+    <link rel="stylesheet" th:href="@{/css/products.css}">
+    <link rel="stylesheet" th:href="@{/css/products-detail.css}">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="site-header">
+            <h1 class="site-title">ECサイト</h1>
+            <nav class="header-links" aria-label="ヘッダーナビゲーション">
+                <a class="nav-link" th:href="@{/products}">商品一覧</a>
+                <a class="cart-link cart-view-trigger" href="#cart-preview" aria-label="カートを見る">
+                    <span>カートを見る</span>
+                    <span class="cart-count" th:text="${cartItemCount}">0</span>
+                </a>
+            </nav>
+        </header>
+
+        <main>
+            <section class="hero" aria-labelledby="product-detail-title">
+                <span class="hero-tag">PRODUCT DETAIL</span>
+                <h2 class="page-title" id="product-detail-title">商品詳細</h2>
+                <p class="hero-copy">
+                    商品情報を確認し、数量を選んでカートへ追加できます。在庫切れや販売停止の商品は数量選択とカート追加を無効化しています。
+                </p>
+            </section>
+
+            <section class="message-banner" id="error-message" th:if="${errorMessage != null}" tabindex="-1">
+                <p th:text="${errorMessage}">エラーメッセージ</p>
+            </section>
+
+            <section class="message-banner message-banner-validation" th:if="${#fields.hasErrors('cartAddForm.*')}">
+                <p th:each="message : ${#fields.errors('cartAddForm.*')}" th:text="${message}">入力エラー</p>
+            </section>
+
+            <section class="detail-layout" aria-label="商品詳細情報">
+                <article class="detail-card">
+                    <div class="product-visual">
+                        <img class="product-image"
+                             th:src="@{${product.imageUrl}}"
+                             th:alt="${product.name} + 'の商品画像'">
+                    </div>
+
+                    <div class="product-body">
+                        <div class="product-top">
+                            <div class="meta-row">
+                                <span class="status-badge" th:text="${product.status == 'ON_SALE'} ? '販売中' : '販売停止'">販売中</span>
+                                <span class="stock-badge" th:classappend="${product.stock == 0} ? ' is-out' : ''"
+                                      th:text="${product.stock == 0} ? '在庫なし' : '在庫あり'">在庫あり</span>
+                            </div>
+
+                            <h3 class="product-name" th:text="${product.name}">商品名</h3>
+                            <p class="product-price" th:text="'¥' + ${#numbers.formatInteger(product.price, 0, 'COMMA')}">¥0</p>
+                            <p class="product-description" th:text="${product.description}">商品説明</p>
+                        </div>
+
+                        <div class="info-grid">
+                            <section class="info-item" aria-labelledby="product-id-label">
+                                <span class="info-label" id="product-id-label">商品ID</span>
+                                <p class="info-value" th:text="${product.productId}">1</p>
+                            </section>
+
+                            <section class="info-item" aria-labelledby="unit-price-label">
+                                <span class="info-label" id="unit-price-label">単価</span>
+                                <p class="info-value" th:text="${#numbers.formatInteger(product.price, 0, 'COMMA')} + '円'">0円</p>
+                            </section>
+
+                            <section class="info-item" aria-labelledby="stock-count-label">
+                                <span class="info-label" id="stock-count-label">在庫数</span>
+                                <p class="info-value" th:text="${product.stock}">0</p>
+                            </section>
+
+                            <section class="info-item" aria-labelledby="sales-status-label">
+                                <span class="info-label" id="sales-status-label">販売ステータス</span>
+                                <p class="info-value" th:text="${product.status == 'ON_SALE'} ? '販売中' : '販売停止'">販売中</p>
+                            </section>
+                        </div>
+                    </div>
+                </article>
+
+                <aside class="summary-card" id="cart-preview" aria-label="購入操作エリア">
+                    <h3 class="summary-title">カートに追加</h3>
+                    <p class="summary-copy">
+                        購入数量を選択してカートへ追加します。追加後もこの商品詳細画面にとどまり、ヘッダーのカート件数に反映されます。
+                    </p>
+
+                    <form class="purchase-panel"
+                          th:action="@{/products/{productId}/cart(productId=${product.productId})}"
+                          th:object="${cartAddForm}"
+                          method="post">
+                        <input type="hidden" th:field="*{productId}">
+
+                        <div>
+                            <label class="field-label" for="quantity">数量</label>
+                            <select id="quantity" th:field="*{quantity}" th:disabled="${!purchasable}">
+                                <option th:if="${!purchasable}" value="">選択不可</option>
+                                <option th:each="quantity : ${#numbers.sequence(1, maxSelectableQuantity)}"
+                                        th:value="${quantity}"
+                                        th:text="${quantity}">1</option>
+                            </select>
+                        </div>
+
+                        <button class="action-button primary" type="submit" th:disabled="${!purchasable}">
+                            <span th:text="${purchasable} ? 'カートに追加' : '在庫切れのため追加できません'">カートに追加</span>
+                        </button>
+
+                        <p class="helper-note" th:if="${purchasable}">
+                            この商品は現在 <span th:text="${product.stock}">0</span> 点の在庫があります。
+                        </p>
+                        <p class="warning-note" th:if="${!purchasable}">
+                            在庫切れ、または販売停止中のためカートへ追加できません。
+                        </p>
+                    </form>
+
+                    <a class="action-button secondary" th:href="@{/products}">商品一覧へ戻る</a>
+                </aside>
+            </section>
+        </main>
+    </div>
+
+    <script th:src="@{/js/products-detail.js}"></script>
+</body>
+</html>

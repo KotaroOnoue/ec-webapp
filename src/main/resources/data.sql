@@ -1,3 +1,5 @@
+DELETE FROM cart_item;
+
 DELETE FROM products;
 
 INSERT INTO products (product_id, name, description, price, stock, status, image_url) VALUES

@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品詳細</title>
+  <style>
+    :root {
+      --bg: #f4ede4;
+      --bg-accent: #fffaf4;
+      --surface: rgba(255, 250, 244, 0.88);
+      --surface-strong: #ffffff;
+      --line: rgba(122, 82, 43, 0.16);
+      --text: #26170a;
+      --muted: #6f5a48;
+      --brand: #b85c38;
+      --brand-strong: #8f3f20;
+      --success: #276749;
+      --danger: #a53f3f;
+      --warning: #8c5b12;
+      --shadow: 0 22px 50px rgba(83, 49, 20, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic", "Hiragino Sans", "Meiryo", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 214, 170, 0.75), transparent 34%),
+        radial-gradient(circle at top right, rgba(184, 92, 56, 0.14), transparent 26%),
+        linear-gradient(160deg, var(--bg) 0%, #f9f6f0 54%, #efe3d5 100%);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      z-index: -1;
+      border-radius: 999px;
+      filter: blur(10px);
+      opacity: 0.72;
+    }
+
+    body::before {
+      width: 18rem;
+      height: 18rem;
+      top: 6rem;
+      left: -6rem;
+      background: rgba(255, 224, 196, 0.95);
+    }
+
+    body::after {
+      width: 20rem;
+      height: 20rem;
+      right: -7rem;
+      bottom: 8rem;
+      background: rgba(214, 145, 96, 0.18);
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page-shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 56px;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 16px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background: rgba(255, 248, 240, 0.84);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .site-title {
+      margin: 0;
+      font-size: clamp(1.1rem, 2vw, 1.45rem);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    .header-links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .nav-link,
+    .cart-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      color: var(--text);
+      text-decoration: none;
+      background: var(--surface-strong);
+      border: 1px solid rgba(122, 82, 43, 0.12);
+      box-shadow: 0 10px 24px rgba(76, 46, 24, 0.09);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .nav-link:hover,
+    .nav-link:focus-visible,
+    .cart-link:hover,
+    .cart-link:focus-visible,
+    .action-button:hover,
+    .action-button:focus-visible,
+    select:hover,
+    select:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(76, 46, 24, 0.14);
+    }
+
+    .cart-count {
+      display: inline-grid;
+      place-items: center;
+      min-width: 1.8rem;
+      height: 1.8rem;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    main {
+      margin-top: 28px;
+      display: grid;
+      gap: 24px;
+    }
+
+    .hero {
+      display: grid;
+      gap: 18px;
+      padding: 28px;
+      border: 1px solid rgba(122, 82, 43, 0.12);
+      border-radius: calc(var(--radius-xl) + 4px);
+      background: linear-gradient(135deg, rgba(255, 250, 244, 0.82), rgba(255, 255, 255, 0.62));
+      box-shadow: var(--shadow);
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(184, 92, 56, 0.1);
+      color: var(--brand-strong);
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .page-title {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 1.05;
+      letter-spacing: 0.04em;
+    }
+
+    .hero-copy {
+      margin: 0;
+      max-width: 52rem;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    .detail-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .detail-card,
+    .summary-card {
+      border: 1px solid rgba(122, 82, 43, 0.12);
+      border-radius: var(--radius-xl);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .detail-card {
+      overflow: hidden;
+    }
+
+    .product-visual {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.58), transparent 22%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(240, 231, 221, 0.9));
+    }
+
+    .product-visual::after {
+      content: "";
+      position: absolute;
+      inset: auto 18px 18px auto;
+      width: 128px;
+      height: 128px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.28);
+      filter: blur(18px);
+    }
+
+    .product-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .product-body {
+      display: grid;
+      gap: 24px;
+      padding: 28px;
+    }
+
+    .product-top {
+      display: grid;
+      gap: 14px;
+    }
+
+    .meta-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .status-badge,
+    .stock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .status-badge {
+      background: rgba(184, 92, 56, 0.12);
+      color: var(--brand-strong);
+    }
+
+    .stock-badge {
+      background: rgba(39, 103, 73, 0.12);
+      color: var(--success);
+    }
+
+    .stock-badge.is-out {
+      background: rgba(165, 63, 63, 0.12);
+      color: var(--danger);
+    }
+
+    .product-name {
+      margin: 0;
+      font-size: clamp(1.9rem, 3vw, 2.8rem);
+      line-height: 1.15;
+    }
+
+    .product-price {
+      margin: 0;
+      font-size: clamp(1.8rem, 3vw, 2.3rem);
+      font-weight: 800;
+      color: var(--brand-strong);
+    }
+
+    .product-description {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.9;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .info-item {
+      padding: 18px;
+      border: 1px solid rgba(122, 82, 43, 0.1);
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.56);
+    }
+
+    .info-label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .info-value {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .summary-card {
+      display: grid;
+      gap: 18px;
+      padding: 24px;
+      position: sticky;
+      top: 112px;
+    }
+
+    .summary-title {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
+    .summary-copy {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .purchase-panel {
+      display: grid;
+      gap: 16px;
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid rgba(122, 82, 43, 0.1);
+    }
+
+    .field-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.94rem;
+      font-weight: 700;
+    }
+
+    select {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid rgba(122, 82, 43, 0.18);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      color: var(--text);
+      font-size: 1rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      appearance: none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--brand-strong) 50%),
+        linear-gradient(135deg, var(--brand-strong) 50%, transparent 50%);
+      background-position:
+        calc(100% - 22px) calc(50% - 3px),
+        calc(100% - 16px) calc(50% - 3px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+    }
+
+    .action-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 52px;
+      padding: 0 20px;
+      border: 0;
+      border-radius: 999px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    }
+
+    .action-button.primary {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-strong) 100%);
+      box-shadow: 0 16px 30px rgba(143, 63, 32, 0.24);
+    }
+
+    .action-button.primary[disabled] {
+      cursor: not-allowed;
+      opacity: 0.56;
+      box-shadow: none;
+      transform: none;
+      background: linear-gradient(135deg, #b9ada4 0%, #95867c 100%);
+    }
+
+    .action-button.secondary {
+      color: var(--brand-strong);
+      background: rgba(184, 92, 56, 0.1);
+      border: 1px solid rgba(184, 92, 56, 0.16);
+    }
+
+    .warning-note,
+    .helper-note {
+      margin: 0;
+      font-size: 0.92rem;
+      line-height: 1.7;
+    }
+
+    .warning-note {
+      color: var(--warning);
+      font-weight: 700;
+    }
+
+    .helper-note {
+      color: var(--muted);
+    }
+
+    .state-preview {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      background: rgba(165, 63, 63, 0.06);
+      border: 1px dashed rgba(165, 63, 63, 0.28);
+    }
+
+    .state-preview h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .state-preview p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .disabled-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .disabled-row select {
+      flex: 1 1 150px;
+    }
+
+    @media (max-width: 900px) {
+      .detail-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-card {
+        position: static;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page-shell {
+        width: min(100% - 20px, 1180px);
+        padding-top: 16px;
+      }
+
+      .site-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .header-links {
+        width: 100%;
+      }
+
+      .nav-link,
+      .cart-link {
+        flex: 1 1 160px;
+        justify-content: center;
+      }
+
+      .hero,
+      .product-body,
+      .summary-card {
+        padding: 20px;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <h1 class="site-title">ECサイト</h1>
+      <nav class="header-links" aria-label="ヘッダーナビゲーション">
+        <a class="nav-link" href="./product-list.html">商品一覧</a>
+        <a class="cart-link" href="#cart-preview" aria-label="カートを見る">
+          <span>カートを見る</span>
+          <span class="cart-count">2</span>
+        </a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="product-detail-title">
+        <span class="hero-tag">PRODUCT DETAIL</span>
+        <h2 class="page-title" id="product-detail-title">商品詳細</h2>
+        <p class="hero-copy">
+          商品情報を確認し、数量を選んでカートに追加する想定のモックです。在庫切れ時は数量選択とカート追加操作を無効化する表現も同じ画面内で確認できます。
+        </p>
+      </section>
+
+      <section class="detail-layout" aria-label="商品詳細情報">
+        <article class="detail-card">
+          <div class="product-visual">
+            <img class="product-image" src="https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=1200&q=80" alt="スペシャルティコーヒー豆の商品画像">
+          </div>
+
+          <div class="product-body">
+            <div class="product-top">
+              <div class="meta-row">
+                <span class="status-badge">販売中</span>
+                <span class="stock-badge">在庫あり</span>
+              </div>
+
+              <h3 class="product-name">スペシャルティコーヒー豆 ギフトセット</h3>
+              <p class="product-price">¥3,980</p>
+              <p class="product-description">
+                華やかな香りとやわらかな甘みを楽しめる中煎りブレンド。ギフトボックス入りで、日常使いにも贈り物にも使いやすい定番セットです。抽出方法を選ばず、ハンドドリップでもエスプレッソでもバランスのよい味わいに仕上がります。
+              </p>
+            </div>
+
+            <div class="info-grid">
+              <section class="info-item" aria-labelledby="product-id-label">
+                <span class="info-label" id="product-id-label">商品ID</span>
+                <p class="info-value">P-00017</p>
+              </section>
+
+              <section class="info-item" aria-labelledby="unit-price-label">
+                <span class="info-label" id="unit-price-label">単価</span>
+                <p class="info-value">3,980円</p>
+              </section>
+
+              <section class="info-item" aria-labelledby="stock-count-label">
+                <span class="info-label" id="stock-count-label">在庫数</span>
+                <p class="info-value">12</p>
+              </section>
+
+              <section class="info-item" aria-labelledby="sales-status-label">
+                <span class="info-label" id="sales-status-label">販売ステータス</span>
+                <p class="info-value">販売中</p>
+              </section>
+            </div>
+          </div>
+        </article>
+
+        <aside class="summary-card" id="cart-preview" aria-label="購入操作エリア">
+          <h3 class="summary-title">カートに追加</h3>
+          <p class="summary-copy">
+            購入数量を選択してカートへ追加します。モックでは数量選択とボタン配置、在庫切れ時の非活性表現を確認できます。
+          </p>
+
+          <div class="purchase-panel">
+            <div>
+              <label class="field-label" for="quantity">数量</label>
+              <select id="quantity" name="quantity">
+                <option value="1" selected>1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+
+            <button class="action-button primary" type="button">カートに追加</button>
+            <p class="helper-note">この商品は現在 12 点の在庫があります。カート追加後は一覧画面と同様にカート内数量が反映される想定です。</p>
+          </div>
+
+          <div class="state-preview" aria-label="在庫切れ時の表示例">
+            <h3>在庫切れ時の表示例</h3>
+            <p>在庫数が 0 の商品では、数量プルダウンとボタンを無効化し、購入不可であることを明示します。</p>
+            <div class="disabled-row">
+              <select aria-label="在庫切れ時の数量選択" disabled>
+                <option>選択不可</option>
+              </select>
+              <button class="action-button primary" type="button" disabled>在庫切れのため追加できません</button>
+            </div>
+            <p class="warning-note">販売ステータスが販売中でも、在庫数が 0 の場合はカート追加不可です。</p>
+          </div>
+
+          <a class="action-button secondary" href="./product-list.html">商品一覧へ戻る</a>
+        </aside>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

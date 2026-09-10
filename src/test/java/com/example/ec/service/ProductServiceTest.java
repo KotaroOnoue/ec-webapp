@@ -6,9 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.example.ec.exception.InsufficientStockException;
 import com.example.ec.exception.ProductUnavailableException;
@@ -24,6 +26,18 @@ class ProductServiceTest {
     @Autowired
     private ProductService productService;
 
+    /** テスト用JDBC操作です。 */
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    /**
+     * テストごとにcart_itemを初期化します。
+     */
+    @BeforeEach
+    void setUp() {
+        jdbcTemplate.update("DELETE FROM cart_item");
+    }
+
     /**
      * 販売中の商品だけがモデルとして返されることを検証します。
      */
@@ -33,6 +47,17 @@ class ProductServiceTest {
 
         assertEquals(3, productModels.size());
         assertEquals(List.of(1L, 2L, 3L), productModels.stream().map(ProductModel::getProductId).toList());
+    }
+
+    /**
+     * 商品IDで商品詳細を取得できることを検証します。
+     */
+    @Test
+    void getProductByIdReturnsProductDetail() {
+        ProductModel productModel = productService.getProductById(1L);
+
+        assertEquals("ワイヤレスイヤホン", productModel.getName());
+        assertEquals("ON_SALE", productModel.getStatus());
     }
 
     /**
@@ -65,5 +90,20 @@ class ProductServiceTest {
     @Test
     void validateAddToCartThrowsWhenQuantityIsLessThanOne() {
         assertThrows(IllegalArgumentException.class, () -> productService.validateAddToCart(1L, 0, 0));
+    }
+
+    /**
+     * cart_itemテーブルへ数量付きで追加できることを検証します。
+     */
+    @Test
+    void addCartItemStoresQuantity() {
+        productService.addCartItem(2L, 4);
+
+        Integer quantity = jdbcTemplate.queryForObject(
+                "SELECT COALESCE(SUM(quantity), 0) FROM cart_item WHERE product_id = ?",
+                Integer.class,
+                2L);
+
+        assertEquals(4, quantity);
     }
 }

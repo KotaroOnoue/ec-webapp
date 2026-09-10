@@ -55,7 +55,7 @@
                         </div>
 
                         <div class="button-group">
-                            <button class="action-button secondary detail-button" type="button" th:attr="data-product-name=${product.name}">詳細を見る</button>
+                            <a class="action-button secondary" th:href="@{/products/{productId}(productId=${product.productId})}">詳細を見る</a>
 
                             <form class="cart-form" th:action="@{/products/cart}" method="post">
                                 <input type="hidden" name="productId" th:value="${product.productId}">

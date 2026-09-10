@@ -67,6 +67,20 @@ public class GlobalExceptionHandler {
     public String redirectWithMessage(HttpServletRequest request, String messageCode) {
         FlashMap flashMap = RequestContextUtils.getOutputFlashMap(request);
         flashMap.put("errorMessage", messageSource.getMessage(messageCode, null, Locale.getDefault()));
-        return "redirect:/products";
+        return "redirect:" + resolveRedirectPath(request);
+    }
+
+    /**
+     * 例外発生元に応じたリダイレクト先を判定します。
+     *
+     * @param request リクエスト
+     * @return リダイレクト先パス
+     */
+    public String resolveRedirectPath(HttpServletRequest request) {
+        String requestUri = request.getRequestURI();
+        if (requestUri != null && requestUri.matches(".*/products/\\d+/cart$")) {
+            return requestUri.replaceFirst("/cart$", "");
+        }
+        return "/products";
     }
 }

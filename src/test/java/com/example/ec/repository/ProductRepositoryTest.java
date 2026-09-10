@@ -9,6 +9,9 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import org.junit.jupiter.api.BeforeEach;
 
 import com.example.ec.repository.entity.ProductEntity;
 
@@ -21,6 +24,18 @@ class ProductRepositoryTest {
     /** 商品Repositoryです。 */
     @Autowired
     private ProductRepository productRepository;
+
+    /** テスト用JDBC操作です。 */
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    /**
+     * テストごとにcart_itemを初期化します。
+     */
+    @BeforeEach
+    void setUp() {
+        jdbcTemplate.update("DELETE FROM cart_item");
+    }
 
     /**
      * 販売中の商品だけが取得されることを検証します。
@@ -44,5 +59,15 @@ class ProductRepositoryTest {
         assertNotNull(productEntity);
         assertEquals("Webカメラ", productEntity.getName());
         assertEquals("STOPPED", productEntity.getStatus());
+    }
+
+    /**
+     * cart_itemテーブルへ数量付きで追加できることを検証します。
+     */
+    @Test
+    void insertCartItemStoresQuantity() {
+        productRepository.insertCartItem(1L, 3);
+
+        assertEquals(3, productRepository.sumCartItemQuantityByProductId(1L));
     }
 }

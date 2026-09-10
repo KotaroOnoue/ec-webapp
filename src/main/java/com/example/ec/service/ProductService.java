@@ -36,6 +36,20 @@ public class ProductService {
     }
 
     /**
+     * 商品IDに対応する商品詳細を取得します。
+     *
+     * @param productId 商品ID
+     * @return 画面表示用の商品詳細
+     */
+    public ProductModel getProductById(Long productId) {
+        ProductEntity productEntity = productRepository.findByProductId(productId);
+        if (productEntity == null) {
+            throw new ProductUnavailableException("指定した商品は存在しません。");
+        }
+        return toModel(productEntity);
+    }
+
+    /**
      * 指定した数量をカートに追加できるかを検証します。
      *
      * @param productId 商品ID
@@ -43,8 +57,8 @@ public class ProductService {
      * @param addQuantity 今回追加する数量
      */
     public void validateAddToCart(Long productId, int currentCartQuantity, int addQuantity) {
-        if (addQuantity < 1) {
-            throw new IllegalArgumentException("数量は1以上を指定してください。");
+        if (addQuantity < 1 || addQuantity > 99) {
+            throw new IllegalArgumentException("数量は1から99の範囲で指定してください。");
         }
 
         ProductEntity productEntity = productRepository.findByProductId(productId);
@@ -56,6 +70,16 @@ public class ProductService {
         if (productEntity.getStock() < requestedQuantity) {
             throw new InsufficientStockException("指定した数量は在庫数を超えています。");
         }
+    }
+
+    /**
+     * 商品をcart_itemテーブルへ追加します。
+     *
+     * @param productId 商品ID
+     * @param quantity 追加数量
+     */
+    public void addCartItem(Long productId, Integer quantity) {
+        productRepository.insertCartItem(productId, quantity);
     }
 
     /**

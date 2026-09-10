@@ -1,6 +1,7 @@
 package com.example.ec.controller.form;
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -17,5 +18,6 @@ public class CartAddForm {
     /** 追加数量です。 */
     @NotNull(message = "{validation.cartAddForm.quantity.notNull}")
     @Min(value = 1, message = "{validation.cartAddForm.quantity.min}")
+    @Max(value = 99, message = "{validation.cartAddForm.quantity.max}")
     private Integer quantity;
 }
