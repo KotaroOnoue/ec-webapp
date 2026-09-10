@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注文確認</title>
+    <link rel="stylesheet" th:href="@{/css/products.css}">
+    <link rel="stylesheet" th:href="@{/css/order-confirm.css}">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="site-header">
+            <h1 class="site-title">ECサイト</h1>
+            <nav class="header-links" aria-label="ヘッダーナビゲーション">
+                <a class="nav-link" th:href="@{/products}">商品一覧</a>
+                <a class="nav-link" th:href="@{/cart}">カート</a>
+                <span class="nav-link-current" aria-disabled="true">注文確認</span>
+            </nav>
+        </header>
+
+        <main>
+            <section class="hero" aria-labelledby="order-confirm-title">
+                <span class="hero-tag">ORDER CONFIRMATION</span>
+                <h2 class="page-title" id="order-confirm-title">注文確認</h2>
+                <p class="hero-copy">
+                    カート内容と配送先情報を確認し、注文確定へ進みます。注文確定後は注文完了画面へリダイレクトします。
+                </p>
+            </section>
+
+            <section class="message-banner" id="error-message" th:if="${errorMessage != null}" tabindex="-1">
+                <p th:text="${errorMessage}">エラーメッセージ</p>
+            </section>
+
+            <section class="message-banner message-banner-validation" th:if="${#fields.hasErrors('orderForm.*')}">
+                <p th:each="message : ${#fields.errors('orderForm.*')}" th:text="${message}">入力エラー</p>
+            </section>
+
+            <section class="confirm-layout" aria-label="注文確認内容">
+                <article class="confirm-card">
+                    <section aria-labelledby="cart-summary-title">
+                        <h3 class="section-title" id="cart-summary-title">カート内容</h3>
+                        <table class="cart-table" th:if="${!#lists.isEmpty(cartItems)}">
+                            <thead>
+                                <tr>
+                                    <th scope="col">商品名</th>
+                                    <th scope="col">単価</th>
+                                    <th scope="col">数量</th>
+                                    <th scope="col">小計</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="cartItem : ${cartItems}">
+                                    <td>
+                                        <p class="product-name" th:text="${cartItem.name}">商品名</p>
+                                    </td>
+                                    <td class="price" th:text="'¥' + ${#numbers.formatInteger(cartItem.price, 0, 'COMMA')}">¥0</td>
+                                    <td class="quantity" th:text="${cartItem.quantity}">0</td>
+                                    <td class="subtotal" th:text="'¥' + ${#numbers.formatInteger(cartItem.subtotal, 0, 'COMMA')}">¥0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="empty-cart" th:if="${#lists.isEmpty(cartItems)}">
+                            <p>カートに商品がありません。</p>
+                        </div>
+                    </section>
+
+                    <section aria-labelledby="shipping-title">
+                        <h3 class="section-title" id="shipping-title">配送先情報</h3>
+                        <form class="form-grid" th:action="@{/orders}" th:object="${orderForm}" method="post">
+                            <div class="field-group">
+                                <label class="field-label" for="customer-name">氏名</label>
+                                <input id="customer-name" th:field="*{customerName}" type="text" placeholder="例: 山田 太郎">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label" for="postal-code">郵便番号</label>
+                                <input id="postal-code" th:field="*{postalCode}" type="text" inputmode="numeric" placeholder="ハイフンなし7桁">
+                                <p class="field-note">ハイフンを含めずに入力してください。</p>
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label" for="address">住所</label>
+                                <input id="address" th:field="*{address}" type="text" placeholder="都道府県から入力">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label" for="phone-number">電話番号</label>
+                                <input id="phone-number" th:field="*{phoneNumber}" type="tel" inputmode="tel" placeholder="例: 0312345678">
+                            </div>
+
+                            <div class="button-stack form-actions">
+                                <button class="action-button primary" type="submit">注文を確定する</button>
+                                <a class="action-button secondary" th:href="@{/cart}">カートへ戻る</a>
+                            </div>
+                        </form>
+                    </section>
+                </article>
+
+                <aside class="summary-card" aria-label="注文操作と合計金額">
+                    <h3 class="section-title">ご請求内容</h3>
+                    <p class="summary-copy">
+                        配送先情報を確認のうえ注文を確定します。
+                    </p>
+
+                    <div class="amount-panel">
+                        <div class="amount-row">
+                            <span>商品点数</span>
+                            <strong th:text="${cartItemCount} + '点'">0点</strong>
+                        </div>
+                        <div class="amount-row total-row">
+                            <span>合計金額</span>
+                            <strong th:text="'¥' + ${#numbers.formatInteger(totalAmount, 0, 'COMMA')}">¥0</strong>
+                        </div>
+                    </div>
+                </aside>
+            </section>
+        </main>
+    </div>
+
+    <script th:src="@{/js/order-confirm.js}"></script>
+</body>
+</html>

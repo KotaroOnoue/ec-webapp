@@ -54,6 +54,10 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public String handleIllegalArgumentException(HttpServletRequest request) {
+        String requestUri = request.getRequestURI();
+        if (requestUri != null && requestUri.equals("/orders")) {
+            return redirectWithMessage(request, "error.order.emptyCart");
+        }
         return redirectWithMessage(request, "error.cart.invalidQuantity");
     }
 
@@ -84,6 +88,9 @@ public class GlobalExceptionHandler {
         String requestUri = request.getRequestURI();
         if (requestUri != null && requestUri.matches(".*/cart/items/\\d+/(update|delete)$")) {
             return "/cart";
+        }
+        if (requestUri != null && requestUri.equals("/orders")) {
+            return "/orders/confirm";
         }
         return "/products";
     }

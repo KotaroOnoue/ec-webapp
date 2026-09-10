@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>注文確認</title>
+  <style>
+    :root {
+      --bg: #f4ede4;
+      --surface: rgba(255, 250, 244, 0.88);
+      --surface-strong: #ffffff;
+      --surface-soft: rgba(255, 255, 255, 0.62);
+      --line: rgba(122, 82, 43, 0.16);
+      --text: #26170a;
+      --muted: #6f5a48;
+      --brand: #b85c38;
+      --brand-strong: #8f3f20;
+      --danger: #a53f3f;
+      --shadow: 0 22px 50px rgba(83, 49, 20, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic", "Hiragino Sans", "Meiryo", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 214, 170, 0.75), transparent 34%),
+        radial-gradient(circle at top right, rgba(184, 92, 56, 0.14), transparent 26%),
+        linear-gradient(160deg, var(--bg) 0%, #f9f6f0 54%, #efe3d5 100%);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      z-index: -1;
+      border-radius: 999px;
+      filter: blur(10px);
+      opacity: 0.72;
+    }
+
+    body::before {
+      width: 18rem;
+      height: 18rem;
+      top: 6rem;
+      left: -6rem;
+      background: rgba(255, 224, 196, 0.95);
+    }
+
+    body::after {
+      width: 20rem;
+      height: 20rem;
+      right: -7rem;
+      bottom: 8rem;
+      background: rgba(214, 145, 96, 0.18);
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page-shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 56px;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 16px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background: rgba(255, 248, 240, 0.84);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .site-title {
+      margin: 0;
+      font-size: clamp(1.1rem, 2vw, 1.45rem);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    .header-links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .nav-link,
+    .nav-link-current {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      text-decoration: none;
+      border: 1px solid rgba(122, 82, 43, 0.12);
+      box-shadow: 0 10px 24px rgba(76, 46, 24, 0.09);
+    }
+
+    .nav-link {
+      color: var(--text);
+      background: var(--surface-strong);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .nav-link:hover,
+    .nav-link:focus-visible,
+    .action-button:hover,
+    .action-button:focus-visible,
+    input:hover,
+    input:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(76, 46, 24, 0.14);
+    }
+
+    .nav-link-current {
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.55);
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    main {
+      margin-top: 28px;
+      display: grid;
+      gap: 24px;
+    }
+
+    .hero {
+      display: grid;
+      gap: 18px;
+      padding: 28px;
+      border: 1px solid rgba(122, 82, 43, 0.12);
+      border-radius: calc(var(--radius-xl) + 4px);
+      background: linear-gradient(135deg, rgba(255, 250, 244, 0.82), rgba(255, 255, 255, 0.62));
+      box-shadow: var(--shadow);
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(184, 92, 56, 0.1);
+      color: var(--brand-strong);
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .page-title {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 1.05;
+      letter-spacing: 0.04em;
+    }
+
+    .hero-copy {
+      margin: 0;
+      max-width: 54rem;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    .confirm-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(340px, 0.92fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .confirm-card,
+    .summary-card {
+      border: 1px solid rgba(122, 82, 43, 0.12);
+      border-radius: var(--radius-xl);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .confirm-card {
+      padding: 24px;
+      display: grid;
+      gap: 22px;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+
+    .cart-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .cart-table thead th {
+      padding: 16px 14px;
+      text-align: left;
+      font-size: 0.86rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(122, 82, 43, 0.12);
+    }
+
+    .cart-table tbody td {
+      padding: 18px 14px;
+      border-bottom: 1px solid rgba(122, 82, 43, 0.1);
+      vertical-align: middle;
+    }
+
+    .cart-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .product-name {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .price,
+    .subtotal,
+    .quantity {
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .price,
+    .subtotal {
+      color: var(--brand-strong);
+    }
+
+    .amount-panel {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      background: var(--surface-soft);
+      border: 1px solid rgba(122, 82, 43, 0.1);
+    }
+
+    .amount-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+    }
+
+    .amount-row strong {
+      color: var(--text);
+      font-size: 1.08rem;
+    }
+
+    .total-row {
+      padding-top: 14px;
+      border-top: 1px solid rgba(122, 82, 43, 0.14);
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .total-row strong {
+      font-size: 1.5rem;
+      color: var(--brand-strong);
+    }
+
+    .summary-card {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+      position: sticky;
+      top: 112px;
+    }
+
+    .summary-copy {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .field-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field-label {
+      font-size: 0.94rem;
+      font-weight: 700;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid rgba(122, 82, 43, 0.18);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .field-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .button-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .action-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 50px;
+      padding: 0 20px;
+      border-radius: 999px;
+      border: 0;
+      font: inherit;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    }
+
+    .action-button.primary {
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+      box-shadow: 0 14px 28px rgba(143, 63, 32, 0.26);
+    }
+
+    .action-button.secondary {
+      color: var(--text);
+      background: #fff;
+      border: 1px solid rgba(122, 82, 43, 0.12);
+    }
+
+    .confirm-note {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 0.94rem;
+    }
+
+    @media (max-width: 920px) {
+      .confirm-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-card {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page-shell {
+        width: min(100% - 20px, 1180px);
+        padding-top: 16px;
+      }
+
+      .site-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .header-links {
+        width: 100%;
+      }
+
+      .nav-link,
+      .nav-link-current {
+        flex: 1 1 150px;
+        justify-content: center;
+      }
+
+      .hero,
+      .confirm-card,
+      .summary-card {
+        padding: 20px;
+      }
+
+      .confirm-card {
+        overflow-x: auto;
+      }
+
+      .cart-table {
+        min-width: 560px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <h1 class="site-title">ECサイト</h1>
+      <nav class="header-links" aria-label="ヘッダーナビゲーション">
+        <a class="nav-link" href="./product-list.html">商品一覧</a>
+        <a class="nav-link" href="./cart.html">カート</a>
+        <span class="nav-link-current" aria-disabled="true">注文確認</span>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="order-confirm-title">
+        <span class="hero-tag">ORDER CONFIRMATION</span>
+        <h2 class="page-title" id="order-confirm-title">注文確認</h2>
+        <p class="hero-copy">
+          カート内容と配送先情報を確認し、注文確定へ進むためのモックです。注文確定時は POST /orders に送信し、その後は注文完了画面へリダイレクトされる想定です。
+        </p>
+      </section>
+
+      <section class="confirm-layout" aria-label="注文確認内容">
+        <article class="confirm-card">
+          <section aria-labelledby="cart-summary-title">
+            <h3 class="section-title" id="cart-summary-title">カート内容</h3>
+            <table class="cart-table">
+              <thead>
+                <tr>
+                  <th scope="col">商品名</th>
+                  <th scope="col">単価</th>
+                  <th scope="col">数量</th>
+                  <th scope="col">小計</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <p class="product-name">スペシャルティコーヒー豆 ギフトセット</p>
+                  </td>
+                  <td class="price">¥3,980</td>
+                  <td class="quantity">2</td>
+                  <td class="subtotal">¥7,960</td>
+                </tr>
+                <tr>
+                  <td>
+                    <p class="product-name">真空断熱タンブラー 450ml</p>
+                  </td>
+                  <td class="price">¥2,680</td>
+                  <td class="quantity">1</td>
+                  <td class="subtotal">¥2,680</td>
+                </tr>
+                <tr>
+                  <td>
+                    <p class="product-name">ドリップケトル ステンレスモデル</p>
+                  </td>
+                  <td class="price">¥6,400</td>
+                  <td class="quantity">1</td>
+                  <td class="subtotal">¥6,400</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section aria-labelledby="shipping-title">
+            <h3 class="section-title" id="shipping-title">配送先情報</h3>
+            <form class="form-grid" action="#order-complete" method="post">
+              <div class="field-group">
+                <label class="field-label" for="customer-name">氏名</label>
+                <input id="customer-name" name="customerName" type="text" value="山田 太郎" placeholder="例: 山田 太郎">
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="postal-code">郵便番号</label>
+                <input id="postal-code" name="postalCode" type="text" inputmode="numeric" value="1500001" placeholder="ハイフンなし7桁">
+                <p class="field-note">ハイフンを含めずに入力する想定です。</p>
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="address">住所</label>
+                <input id="address" name="address" type="text" value="東京都渋谷区神宮前1-2-3 サンプルマンション101" placeholder="都道府県から入力">
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="phone-number">電話番号</label>
+                <input id="phone-number" name="phoneNumber" type="tel" inputmode="tel" value="0312345678" placeholder="例: 0312345678">
+              </div>
+            </form>
+          </section>
+        </article>
+
+        <aside class="summary-card" aria-label="注文操作と合計金額">
+          <h3 class="section-title">ご請求内容</h3>
+          <p class="summary-copy">
+            配送先情報を確認のうえ注文を確定します。注文確定後は注文完了画面へ遷移する想定です。
+          </p>
+
+          <div class="amount-panel">
+            <div class="amount-row">
+              <span>商品点数</span>
+              <strong>4点</strong>
+            </div>
+            <div class="amount-row total-row">
+              <span>合計金額</span>
+              <strong>¥17,040</strong>
+            </div>
+          </div>
+
+          <div class="button-stack">
+            <form action="#order-complete" method="post">
+              <button class="action-button primary" type="submit">注文を確定する</button>
+            </form>
+            <a class="action-button secondary" href="./cart.html">カートへ戻る</a>
+          </div>
+
+          <p class="confirm-note">
+            このモックでは、注文を確定するボタンは POST /orders、カートへ戻るボタンは GET /cart へ遷移する画面導線を表現するためのものです。
+          </p>
+        </aside>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

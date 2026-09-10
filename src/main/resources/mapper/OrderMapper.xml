@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ec.repository.OrderRepository">
+
+    <select id="findNextOrderId" resultType="long">
+        SELECT COALESCE(MAX(order_id), 0) + 1
+        FROM orders
+    </select>
+
+    <insert id="insertOrder">
+        INSERT INTO orders (
+            order_id,
+            customer_name,
+            postal_code,
+            adress,
+            phone_number,
+            total_amount,
+            order_at
+        )
+        VALUES (
+            #{orderId},
+            #{customerName},
+            #{postalCode},
+            #{address},
+            #{phoneNumber},
+            #{totalAmount},
+            #{orderAt}
+        )
+    </insert>
+</mapper>

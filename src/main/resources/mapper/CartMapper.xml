@@ -53,4 +53,8 @@
         DELETE FROM cart_item
         WHERE product_id = #{productId}
     </delete>
+
+    <delete id="deleteAllCartItems">
+        DELETE FROM cart_item
+    </delete>
 </mapper>

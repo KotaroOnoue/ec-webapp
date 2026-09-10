@@ -42,4 +42,9 @@ public interface CartRepository {
      * @param productId 商品ID
      */
     void deleteCartItemsByProductId(@Param("productId") Long productId);
+
+    /**
+     * カート内の商品をすべて削除します。
+     */
+    void deleteAllCartItems();
 }
