@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.example.ec.service.CartService;
 import com.example.ec.exception.InsufficientStockException;
 import com.example.ec.exception.ProductUnavailableException;
 import com.example.ec.service.model.ProductModel;
@@ -25,6 +26,10 @@ class ProductServiceTest {
     /** 商品Serviceです。 */
     @Autowired
     private ProductService productService;
+
+    /** カートServiceです。 */
+    @Autowired
+    private CartService cartService;
 
     /** テスト用JDBC操作です。 */
     @Autowired
@@ -97,7 +102,7 @@ class ProductServiceTest {
      */
     @Test
     void addCartItemStoresQuantity() {
-        productService.addCartItem(2L, 4);
+        cartService.addCartItem(2L, 4);
 
         Integer quantity = jdbcTemplate.queryForObject(
                 "SELECT COALESCE(SUM(quantity), 0) FROM cart_item WHERE product_id = ?",

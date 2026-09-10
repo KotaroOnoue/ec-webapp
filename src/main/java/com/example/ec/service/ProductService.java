@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.ec.repository.CartRepository;
 import com.example.ec.exception.InsufficientStockException;
 import com.example.ec.exception.ProductUnavailableException;
 import com.example.ec.repository.ProductRepository;
@@ -23,6 +24,10 @@ public class ProductService {
     /** 商品Repositoryです。 */
     @Autowired
     private ProductRepository productRepository;
+
+    /** カートRepositoryです。 */
+    @Autowired
+    private CartRepository cartRepository;
 
     /**
      * 販売中の商品一覧を取得します。
@@ -79,7 +84,7 @@ public class ProductService {
      * @param quantity 追加数量
      */
     public void addCartItem(Long productId, Integer quantity) {
-        productRepository.insertCartItem(productId, quantity);
+        cartRepository.insertCartItem(productId, quantity);
     }
 
     /**

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ec.repository.CartRepository">
+
+    <resultMap id="cartItemResultMap" type="com.example.ec.repository.entity.CartItemEntity">
+        <id property="productId" column="product_id" />
+        <result property="name" column="name" />
+        <result property="price" column="price" />
+        <result property="quantity" column="quantity" />
+    </resultMap>
+
+    <select id="findCartItems" resultMap="cartItemResultMap">
+        SELECT
+            p.product_id,
+            p.name,
+            p.price,
+            SUM(ci.quantity) AS quantity
+        FROM
+            cart_item ci
+        INNER JOIN products p
+            ON p.product_id = ci.product_id
+        GROUP BY
+            p.product_id,
+            p.name,
+            p.price
+        ORDER BY
+            p.product_id
+    </select>
+
+    <insert id="insertCartItem">
+        INSERT INTO cart_item (
+            product_id,
+            quantity
+        )
+        VALUES (
+            #{productId},
+            #{quantity}
+        )
+    </insert>
+
+    <select id="sumCartItemQuantityByProductId" resultType="int">
+        SELECT
+            COALESCE(SUM(quantity), 0)
+        FROM
+            cart_item
+        WHERE
+            product_id = #{productId}
+    </select>
+
+    <delete id="deleteCartItemsByProductId">
+        DELETE FROM cart_item
+        WHERE product_id = #{productId}
+    </delete>
+</mapper>

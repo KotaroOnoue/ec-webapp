@@ -13,7 +13,7 @@
             <h1 class="site-title">ECサイト</h1>
             <nav class="header-links" aria-label="ヘッダーナビゲーション">
                 <a class="nav-link" th:href="@{/products}">商品一覧</a>
-                <a class="cart-link cart-view-trigger" href="#cart-preview" aria-label="カートを見る">
+                <a class="cart-link" th:href="@{/cart}" aria-label="カートを見る">
                     <span>カートを見る</span>
                     <span class="cart-count" th:text="${cartItemCount}">0</span>
                 </a>
@@ -82,17 +82,18 @@
                     </div>
                 </article>
 
-                <aside class="summary-card" id="cart-preview" aria-label="購入操作エリア">
+                <aside class="summary-card" aria-label="購入操作エリア">
                     <h3 class="summary-title">カートに追加</h3>
                     <p class="summary-copy">
                         購入数量を選択してカートへ追加します。追加後もこの商品詳細画面にとどまり、ヘッダーのカート件数に反映されます。
                     </p>
 
                     <form class="purchase-panel"
-                          th:action="@{/products/{productId}/cart(productId=${product.productId})}"
+                                                    th:action="@{/cart/items}"
                           th:object="${cartAddForm}"
                           method="post">
                         <input type="hidden" th:field="*{productId}">
+                                                <input type="hidden" name="redirectTo" th:value="@{/products/{productId}(productId=${product.productId})}">
 
                         <div>
                             <label class="field-label" for="quantity">数量</label>

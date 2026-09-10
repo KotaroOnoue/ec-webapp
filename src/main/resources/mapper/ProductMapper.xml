@@ -45,24 +45,4 @@
         WHERE
             product_id = #{productId}
     </select>
-
-    <insert id="insertCartItem">
-        INSERT INTO cart_item (
-            product_id,
-            quantity
-        )
-        VALUES (
-            #{productId},
-            #{quantity}
-        )
-    </insert>
-
-    <select id="sumCartItemQuantityByProductId" resultType="int">
-        SELECT
-            COALESCE(SUM(quantity), 0)
-        FROM
-            cart_item
-        WHERE
-            product_id = #{productId}
-    </select>
 </mapper>

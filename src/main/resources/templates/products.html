@@ -10,7 +10,7 @@
     <div class="page-shell">
         <header class="site-header">
             <h1 class="site-title">ECサイト</h1>
-            <a class="cart-link cart-view-trigger" href="#cart-preview" aria-label="カートを見る">
+            <a class="cart-link" th:href="@{/cart}" aria-label="カートを見る">
                 <span>カートを見る</span>
                 <span class="cart-count" th:text="${cartItemCount}">0</span>
             </a>
@@ -57,13 +57,13 @@
                         <div class="button-group">
                             <a class="action-button secondary" th:href="@{/products/{productId}(productId=${product.productId})}">詳細を見る</a>
 
-                            <form class="cart-form" th:action="@{/products/cart}" method="post">
+                            <form class="cart-form" th:action="@{/cart/items}" method="post">
                                 <input type="hidden" name="productId" th:value="${product.productId}">
                                 <input type="hidden" name="quantity" value="1">
+                                <input type="hidden" name="redirectTo" value="/products">
                                 <button class="action-button primary" type="submit" th:disabled="${product.stock == 0}">カートに追加</button>
                             </form>
-
-                            <a class="action-button ghost cart-view-trigger" href="#cart-preview">カートを見る</a>
+                            <a class="action-button ghost" th:href="@{/cart}">カートを見る</a>
                         </div>
 
                         <p class="card-footnote">
@@ -72,20 +72,6 @@
                         </p>
                     </div>
                 </article>
-            </section>
-
-            <section class="mock-cart-panel" id="cart-preview" aria-label="カート状況">
-                <h2>カート状況</h2>
-                <p th:if="${cartItemCount == 0}">現在カートに商品は入っていません。</p>
-                <div th:if="${cartItemCount > 0}">
-                    <p class="cart-summary">現在のカート内商品数: <span th:text="${cartItemCount}">0</span></p>
-                    <ul class="cart-list">
-                        <li th:each="product : ${products}" th:if="${cart[product.productId] != null}">
-                            <span th:text="${product.name}">商品名</span>
-                            <span th:text="' × ' + ${cart[product.productId]}"> × 1</span>
-                        </li>
-                    </ul>
-                </div>
             </section>
         </main>
     </div>

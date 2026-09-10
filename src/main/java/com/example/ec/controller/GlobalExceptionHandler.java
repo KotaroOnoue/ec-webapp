@@ -77,9 +77,13 @@ public class GlobalExceptionHandler {
      * @return リダイレクト先パス
      */
     public String resolveRedirectPath(HttpServletRequest request) {
+        String redirectTo = request.getParameter("redirectTo");
+        if (redirectTo != null && !redirectTo.isBlank()) {
+            return redirectTo;
+        }
         String requestUri = request.getRequestURI();
-        if (requestUri != null && requestUri.matches(".*/products/\\d+/cart$")) {
-            return requestUri.replaceFirst("/cart$", "");
+        if (requestUri != null && requestUri.matches(".*/cart/items/\\d+/(update|delete)$")) {
+            return "/cart";
         }
         return "/products";
     }

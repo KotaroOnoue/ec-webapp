@@ -77,10 +77,11 @@ class ProductControllerTest {
         Map<Long, Integer> cart = new LinkedHashMap<>();
         cart.put(1L, 10);
 
-        mockMvc.perform(post("/products/cart")
+        mockMvc.perform(post("/cart/items")
                         .sessionAttr("cart", cart)
                         .param("productId", "1")
-                        .param("quantity", "1"))
+                .param("quantity", "1")
+                .param("redirectTo", "/products"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/products"))
                 .andExpect(flash().attribute("errorMessage", "在庫数を超えるためカートに追加できません。"));
@@ -93,10 +94,11 @@ class ProductControllerTest {
      */
     @Test
     void addToCartRedirectsWhenAdditionSucceeds() throws Exception {
-        mockMvc.perform(post("/products/cart")
+        mockMvc.perform(post("/cart/items")
                         .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
                         .param("productId", "1")
-                        .param("quantity", "1"))
+                .param("quantity", "1")
+                .param("redirectTo", "/products"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/products"));
     }
@@ -123,10 +125,11 @@ class ProductControllerTest {
      */
     @Test
     void addToCartFromDetailRedirectsAndStoresQuantity() throws Exception {
-        mockMvc.perform(post("/products/2/cart")
+        mockMvc.perform(post("/cart/items")
                         .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
                         .param("productId", "2")
-                        .param("quantity", "3"))
+                        .param("quantity", "3")
+                        .param("redirectTo", "/products/2"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/products/2"));
 

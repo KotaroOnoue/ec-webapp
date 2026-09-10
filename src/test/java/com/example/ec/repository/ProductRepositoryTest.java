@@ -6,12 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-
-import org.junit.jupiter.api.BeforeEach;
 
 import com.example.ec.repository.entity.ProductEntity;
 
@@ -59,15 +58,5 @@ class ProductRepositoryTest {
         assertNotNull(productEntity);
         assertEquals("Webカメラ", productEntity.getName());
         assertEquals("STOPPED", productEntity.getStatus());
-    }
-
-    /**
-     * cart_itemテーブルへ数量付きで追加できることを検証します。
-     */
-    @Test
-    void insertCartItemStoresQuantity() {
-        productRepository.insertCartItem(1L, 3);
-
-        assertEquals(3, productRepository.sumCartItemQuantityByProductId(1L));
     }
 }

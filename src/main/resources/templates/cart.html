@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カート</title>
+    <link rel="stylesheet" th:href="@{/css/products.css}">
+    <link rel="stylesheet" th:href="@{/css/cart.css}">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="site-header">
+            <h1 class="site-title">ECサイト</h1>
+            <nav class="header-links" aria-label="ヘッダーナビゲーション">
+                <a class="nav-link" th:href="@{/products}">商品一覧</a>
+                <span class="nav-link-current" aria-disabled="true">カート</span>
+            </nav>
+        </header>
+
+        <main>
+            <section class="hero" aria-labelledby="cart-title">
+                <span class="hero-tag">SHOPPING CART</span>
+                <h2 class="page-title" id="cart-title">カート</h2>
+                <p class="hero-copy">
+                    カートに追加された商品を確認し、数量更新や削除を行えます。更新後は小計と合計金額が再計算されます。
+                </p>
+            </section>
+
+            <section class="message-banner" id="error-message" th:if="${errorMessage != null}" tabindex="-1">
+                <p th:text="${errorMessage}">エラーメッセージ</p>
+            </section>
+
+            <section class="message-banner message-banner-validation" th:if="${#fields.hasErrors('cartUpdateForm.*')}">
+                <p th:each="message : ${#fields.errors('cartUpdateForm.*')}" th:text="${message}">入力エラー</p>
+            </section>
+
+            <section class="cart-layout" aria-label="カート内容">
+                <article class="cart-card" th:if="${!#lists.isEmpty(cartItems)}">
+                    <table class="cart-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">商品ID</th>
+                                <th scope="col">商品名</th>
+                                <th scope="col">単価</th>
+                                <th scope="col">数量</th>
+                                <th scope="col">小計</th>
+                                <th scope="col">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="cartItem : ${cartItems}">
+                                <td class="product-id" th:text="${cartItem.productId}">1</td>
+                                <td>
+                                    <p class="product-name" th:text="${cartItem.name}">商品名</p>
+                                </td>
+                                <td class="price" th:text="'¥' + ${#numbers.formatInteger(cartItem.price, 0, 'COMMA')}">¥0</td>
+                                <td>
+                                    <form class="quantity-form"
+                                          th:action="@{/cart/items/{productId}/update(productId=${cartItem.productId})}"
+                                          method="post">
+                                        <input type="hidden" name="productId" th:value="${cartItem.productId}">
+                                        <select th:name="quantity" th:aria-label="${cartItem.name} + 'の数量'">
+                                            <option th:each="quantity : ${#numbers.sequence(1, 99)}"
+                                                    th:value="${quantity}"
+                                                    th:text="${quantity}"
+                                                    th:selected="${quantity == cartItem.quantity}">1</option>
+                                        </select>
+                                        <button class="action-button secondary" type="submit">数量更新</button>
+                                    </form>
+                                </td>
+                                <td class="subtotal" th:text="'¥' + ${#numbers.formatInteger(cartItem.subtotal, 0, 'COMMA')}">¥0</td>
+                                <td>
+                                    <form class="action-row"
+                                          th:action="@{/cart/items/{productId}/delete(productId=${cartItem.productId})}"
+                                          method="post">
+                                        <button class="action-button danger" type="submit">削除</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </article>
+
+                <article class="cart-card empty-cart" th:if="${#lists.isEmpty(cartItems)}">
+                    <h3>カートに商品がありません</h3>
+                    <p>商品一覧から商品を選び、カートに追加してください。</p>
+                </article>
+
+                <aside class="summary-card" aria-label="合計金額と遷移操作">
+                    <h3 class="summary-title">カート集計</h3>
+                    <p class="summary-copy">
+                        数量更新や削除後はこの画面へ戻り、小計と合計金額が更新されます。
+                    </p>
+
+                    <div class="amount-panel">
+                        <div class="amount-row">
+                            <span>商品点数</span>
+                            <strong th:text="${cartItemCount} + '点'">0点</strong>
+                        </div>
+                        <div class="amount-row total-row">
+                            <span>合計金額</span>
+                            <strong th:text="'¥' + ${#numbers.formatInteger(totalAmount, 0, 'COMMA')}">¥0</strong>
+                        </div>
+                    </div>
+
+                    <div class="button-stack">
+                        <a class="action-button secondary" th:href="@{/products}">買い物を続ける</a>
+                        <a class="action-button primary" th:href="@{/orders/confirm}">注文手続きへ</a>
+                    </div>
+                </aside>
+            </section>
+        </main>
+    </div>
+
+    <script th:src="@{/js/cart.js}"></script>
+</body>
+</html>
