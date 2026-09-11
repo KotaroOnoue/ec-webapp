@@ -50,7 +50,9 @@ class OrderConfirmServiceMockTest {
     @Test
     void placeOrderStoresOrderAndReturnsOrderId() {
         OrderForm orderForm = createOrderForm();
+        orderForm.setDiscountCode(1001L);
         when(cartService.getTotalAmount()).thenReturn(15940);
+        when(cartService.getDiscountedBillingAmount(1001L)).thenReturn(15246);
         when(orderRepository.findNextOrderId()).thenReturn(5L);
 
         Long orderId = orderService.placeOrder(orderForm);
@@ -62,7 +64,7 @@ class OrderConfirmServiceMockTest {
             eq("1500001"),
             eq("東京都千代田区1-1-1"),
             eq("0312345678"),
-            eq(15940),
+            eq(15246),
             any());
         verify(cartRepository, times(1)).deleteAllCartItems();
     }

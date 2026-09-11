@@ -11,6 +11,9 @@ import lombok.Data;
 @Data
 public class OrderForm {
 
+    /** クーポン番号です。 */
+    private Long discountCode;
+
     /** 顧客名です。 */
     @NotBlank(message = "{validation.orderForm.customerName.notBlank}")
     @Size(max = 100, message = "{validation.orderForm.customerName.size}")

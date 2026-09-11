@@ -36,10 +36,12 @@ public class OrderService {
      * @return 保存した注文ID
      */
     public Long placeOrder(OrderForm orderForm) {
-        int totalAmount = cartService.getTotalAmount();
-        if (totalAmount <= 0) {
+        int cartTotalAmount = cartService.getTotalAmount();
+        if (cartTotalAmount <= 0) {
             throw new IllegalArgumentException("カートに商品がありません。");
         }
+
+        int totalAmount = cartService.getDiscountedBillingAmount(orderForm.getDiscountCode());
 
         Long orderId = orderRepository.findNextOrderId();
         orderRepository.insertOrder(

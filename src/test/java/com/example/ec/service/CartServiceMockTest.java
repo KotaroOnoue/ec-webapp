@@ -19,7 +19,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.example.ec.exception.InsufficientStockException;
 import com.example.ec.repository.CartRepository;
+import com.example.ec.repository.DiscountCodeRepository;
 import com.example.ec.repository.entity.CartItemEntity;
+import com.example.ec.repository.entity.DiscountCodeEntity;
 import com.example.ec.service.model.CartItemModel;
 
 /**
@@ -35,6 +37,10 @@ class CartServiceMockTest {
     /** 商品Serviceのモックです。 */
     @Mock
     private ProductService productService;
+
+    /** クーポンRepositoryのモックです。 */
+    @Mock
+    private DiscountCodeRepository discountCodeRepository;
 
     /** テスト対象のServiceです。 */
     @InjectMocks
@@ -122,6 +128,48 @@ class CartServiceMockTest {
         int billingAmount = cartService.getBillingAmount();
 
         assertEquals(16940, billingAmount);
+    }
+
+    /**
+     * 有効なクーポンの割引額を返すことを検証します。
+     */
+    @Test
+    void getDiscountAmountReturnsDiscountWhenCodeExists() {
+        when(cartRepository.findCartItems()).thenReturn(List.of(
+                createCartItemEntity(1L, "ワイヤレスイヤホン", 5980, 2),
+                createCartItemEntity(2L, "ゲーミングマウス", 3980, 1)));
+        when(discountCodeRepository.findByDiscountCode(1001L)).thenReturn(createDiscountCodeEntity(1001L, "0.10"));
+
+        int discountAmount = cartService.getDiscountAmount(1001L);
+
+        assertEquals(1694, discountAmount);
+    }
+
+    /**
+     * 無効なクーポンでは割引額が0であることを検証します。
+     */
+    @Test
+    void getDiscountAmountReturnsZeroWhenCodeDoesNotExist() {
+        when(discountCodeRepository.findByDiscountCode(9999L)).thenReturn(null);
+
+        int discountAmount = cartService.getDiscountAmount(9999L);
+
+        assertEquals(0, discountAmount);
+    }
+
+    /**
+     * 有効なクーポン適用後の請求金額を返すことを検証します。
+     */
+    @Test
+    void getDiscountedBillingAmountReturnsBillingAmountAfterDiscount() {
+        when(cartRepository.findCartItems()).thenReturn(List.of(
+                createCartItemEntity(1L, "ワイヤレスイヤホン", 5980, 2),
+                createCartItemEntity(2L, "ゲーミングマウス", 3980, 1)));
+        when(discountCodeRepository.findByDiscountCode(1001L)).thenReturn(createDiscountCodeEntity(1001L, "0.10"));
+
+        int billingAmount = cartService.getDiscountedBillingAmount(1001L);
+
+        assertEquals(15246, billingAmount);
     }
 
     /**
@@ -225,5 +273,19 @@ class CartServiceMockTest {
         cartItemEntity.setPrice(price);
         cartItemEntity.setQuantity(quantity);
         return cartItemEntity;
+    }
+
+    /**
+     * テスト用のクーポンEntityを生成します。
+     *
+     * @param discountCode クーポン番号
+     * @param discountRate 割引率
+     * @return クーポンEntity
+     */
+    private DiscountCodeEntity createDiscountCodeEntity(Long discountCode, String discountRate) {
+        DiscountCodeEntity discountCodeEntity = new DiscountCodeEntity();
+        discountCodeEntity.setDiscountCode(discountCode);
+        discountCodeEntity.setDiscountRate(new java.math.BigDecimal(discountRate));
+        return discountCodeEntity;
     }
 }

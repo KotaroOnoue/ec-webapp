@@ -137,6 +137,18 @@
     gap: 16px;
 }
 
+.coupon-form {
+    display: grid;
+    gap: 10px;
+}
+
+.coupon-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+}
+
 .field-group {
     display: grid;
     gap: 8px;
@@ -147,7 +159,8 @@
     font-weight: 700;
 }
 
-.field-group input {
+.field-group input,
+.coupon-form input {
     width: 100%;
     padding: 14px 16px;
     border: 1px solid rgba(122, 82, 43, 0.18);
@@ -155,6 +168,10 @@
     background: #fff;
     color: var(--text);
     font: inherit;
+}
+
+.coupon-button {
+    min-width: 108px;
 }
 
 .button-stack {
@@ -191,6 +208,10 @@
     .confirm-card,
     .summary-card {
         padding: 20px;
+    }
+
+    .coupon-row {
+        grid-template-columns: 1fr;
     }
 
     .confirm-card {

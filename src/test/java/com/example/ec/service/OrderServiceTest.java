@@ -44,14 +44,17 @@ class OrderServiceTest {
         orderForm.setPostalCode("1500001");
         orderForm.setAddress("東京都千代田区1-1-1");
         orderForm.setPhoneNumber("0312345678");
+        orderForm.setDiscountCode(1001L);
 
         Long orderId = orderService.placeOrder(orderForm);
 
         assertEquals(1L, orderId);
         Integer orderCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM orders", Integer.class);
         Integer cartCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM cart_item", Integer.class);
+        Integer totalAmount = jdbcTemplate.queryForObject("SELECT total_amount FROM orders WHERE order_id = ?", Integer.class, 1L);
         assertEquals(1, orderCount);
         assertEquals(0, cartCount);
+        assertEquals(11664, totalAmount);
     }
 
     /**

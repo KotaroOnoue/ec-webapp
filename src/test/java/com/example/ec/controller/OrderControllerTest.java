@@ -61,6 +61,8 @@ class OrderControllerTest {
                 .andExpect(view().name("order-confirm"))
                 .andExpect(content().string(containsString("ワイヤレスイヤホン")))
                 .andExpect(content().string(containsString("ゲーミングマウス")))
+                .andExpect(content().string(containsString("クーポン番号")))
+                .andExpect(content().string(containsString("適用")))
                 .andExpect(content().string(containsString("送料")))
                 .andExpect(content().string(containsString("¥1,000")))
                 .andExpect(content().string(containsString("¥16,940")))
@@ -100,6 +102,7 @@ class OrderControllerTest {
     void placeOrderRedirectsToCompleteAndStoresOrder() throws Exception {
         mockMvc.perform(post("/orders")
                         .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "1500001")
                         .param("address", "東京都千代田区1-1-1")
@@ -108,7 +111,9 @@ class OrderControllerTest {
                 .andExpect(redirectedUrl("/orders/complete/1"));
 
         Integer orderCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM orders", Integer.class);
+        Integer totalAmount = jdbcTemplate.queryForObject("SELECT total_amount FROM orders WHERE order_id = ?", Integer.class, 1L);
         assertEquals(1, orderCount);
+        assertEquals(15246, totalAmount);
     }
 
     /**
@@ -120,6 +125,7 @@ class OrderControllerTest {
     void placeOrderReturnsOrderConfirmWhenValidationFails() throws Exception {
         mockMvc.perform(post("/orders")
                         .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .param("discountCode", "1001")
                         .param("customerName", "")
                         .param("postalCode", "")
                         .param("address", "")

@@ -1,12 +1,16 @@
 package com.example.ec.service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.ec.repository.CartRepository;
+import com.example.ec.repository.DiscountCodeRepository;
 import com.example.ec.repository.entity.CartItemEntity;
+import com.example.ec.repository.entity.DiscountCodeEntity;
 import com.example.ec.service.model.CartItemModel;
 
 /**
@@ -25,6 +29,10 @@ public class CartService {
     /** 商品Serviceです。 */
     @Autowired
     private ProductService productService;
+
+    /** クーポンRepositoryです。 */
+    @Autowired
+    private DiscountCodeRepository discountCodeRepository;
 
     /**
      * カート内の商品一覧を取得します。
@@ -67,6 +75,43 @@ public class CartService {
     }
 
     /**
+     * 指定したクーポン番号が有効かを判定します。
+     *
+     * @param discountCode クーポン番号
+     * @return 有効ならtrue
+     */
+    public boolean isDiscountCodeAvailable(Long discountCode) {
+        return findDiscountCode(discountCode) != null;
+    }
+
+    /**
+     * 指定したクーポンによる割引額を取得します。
+     *
+     * @param discountCode クーポン番号
+     * @return 割引額
+     */
+    public int getDiscountAmount(Long discountCode) {
+        DiscountCodeEntity discountCodeEntity = findDiscountCode(discountCode);
+        if (discountCodeEntity == null) {
+            return 0;
+        }
+        return BigDecimal.valueOf(getBillingAmount())
+                .multiply(discountCodeEntity.getDiscountRate())
+                .setScale(0, RoundingMode.DOWN)
+                .intValue();
+    }
+
+    /**
+     * クーポン適用後の請求金額を取得します。
+     *
+     * @param discountCode クーポン番号
+     * @return クーポン適用後の請求金額
+     */
+    public int getDiscountedBillingAmount(Long discountCode) {
+        return getBillingAmount() - getDiscountAmount(discountCode);
+    }
+
+    /**
      * カート内の合計数量を取得します。
      *
      * @return 合計数量
@@ -75,6 +120,19 @@ public class CartService {
         return getCartItems().stream()
                 .mapToInt(CartItemModel::getQuantity)
                 .sum();
+    }
+
+    /**
+     * クーポン情報を取得します。
+     *
+     * @param discountCode クーポン番号
+     * @return クーポン情報。存在しない場合はnull
+     */
+    private DiscountCodeEntity findDiscountCode(Long discountCode) {
+        if (discountCode == null) {
+            return null;
+        }
+        return discountCodeRepository.findByDiscountCode(discountCode);
     }
 
     /**

@@ -13,6 +13,11 @@ CREATE TABLE IF NOT EXISTS cart_item (
     quantity INTEGER NOT NULL CHECK (quantity BETWEEN 1 AND 99)
 );
 
+CREATE TABLE IF NOT EXISTS discount_codes (
+    discount_code BIGINT PRIMARY KEY CHECK (discount_code >= 1),
+    discount_rate DECIMAL(4, 2) NOT NULL CHECK (discount_rate BETWEEN 0 AND 1)
+);
+
 CREATE TABLE IF NOT EXISTS orders (
     order_id BIGINT PRIMARY KEY CHECK (order_id >= 1),
     customer_name VARCHAR(100) NOT NULL,

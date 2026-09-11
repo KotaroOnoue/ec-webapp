@@ -31,8 +31,10 @@
                 <p th:text="${errorMessage}">エラーメッセージ</p>
             </section>
 
-            <section class="message-banner message-banner-validation" th:if="${#fields.hasErrors('orderForm.*')}">
+            <section class="message-banner message-banner-validation"
+                     th:if="${#fields.hasErrors('orderForm.*') or #fields.hasErrors('couponApplyForm.*')}">
                 <p th:each="message : ${#fields.errors('orderForm.*')}" th:text="${message}">入力エラー</p>
+                <p th:each="message : ${#fields.errors('couponApplyForm.*')}" th:text="${message}">入力エラー</p>
             </section>
 
             <section class="confirm-layout" aria-label="注文確認内容">
@@ -64,9 +66,24 @@
                         </div>
                     </section>
 
+                    <section aria-labelledby="coupon-title">
+                        <h3 class="section-title" id="coupon-title">クーポン</h3>
+                        <form class="coupon-form" th:action="@{/orders/confirm/coupon}" th:object="${couponApplyForm}" method="post">
+                            <label class="field-label" for="discount-code">クーポン番号</label>
+                            <div class="coupon-row">
+                                <input id="discount-code" th:field="*{discountCode}" type="text" inputmode="numeric" placeholder="数字で入力">
+                                <button class="action-button secondary coupon-button" type="submit">適用</button>
+                            </div>
+                            <p class="field-note" th:if="${appliedDiscountCode != null}">
+                                適用中のクーポン番号: <span th:text="${appliedDiscountCode}">1001</span>
+                            </p>
+                        </form>
+                    </section>
+
                     <section aria-labelledby="shipping-title">
                         <h3 class="section-title" id="shipping-title">配送先情報</h3>
                         <form class="form-grid" th:action="@{/orders}" th:object="${orderForm}" method="post">
+                            <input type="hidden" th:field="*{discountCode}">
                             <div class="field-group">
                                 <label class="field-label" for="customer-name">氏名</label>
                                 <input id="customer-name" th:field="*{customerName}" type="text" placeholder="例: 山田 太郎">
@@ -114,6 +131,10 @@
                         <div class="amount-row">
                             <span>送料</span>
                             <strong th:text="'¥' + ${#numbers.formatInteger(shippingAmount, 0, 'COMMA')}">¥0</strong>
+                        </div>
+                        <div class="amount-row">
+                            <span>クーポン割引</span>
+                            <strong th:text="'¥' + ${#numbers.formatInteger(discountAmount, 0, 'COMMA')}">¥0</strong>
                         </div>
                         <div class="amount-row total-row">
                             <span>ご請求金額</span>

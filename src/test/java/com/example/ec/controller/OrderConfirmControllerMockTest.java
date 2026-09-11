@@ -102,6 +102,8 @@ class OrderConfirmControllerMockTest {
 
         mockMvc.perform(get("/orders/confirm"))
                 .andExpect(status().isOk())
+                .andExpect(content().string(containsString("クーポン番号")))
+                .andExpect(content().string(containsString("適用")))
                 .andExpect(content().string(containsString("氏名")))
                 .andExpect(content().string(containsString("郵便番号")))
                 .andExpect(content().string(containsString("住所")))
@@ -125,12 +127,34 @@ class OrderConfirmControllerMockTest {
                 .andExpect(model().attribute("cartItemCount", 3))
                 .andExpect(model().attribute("totalAmount", 15940))
                 .andExpect(model().attribute("shippingAmount", 1000))
+                .andExpect(model().attribute("discountAmount", 0))
                 .andExpect(model().attribute("billingAmount", 16940))
                 .andExpect(content().string(containsString("3点")))
                 .andExpect(content().string(containsString("送料")))
                 .andExpect(content().string(containsString("¥1,000")))
+                .andExpect(content().string(containsString("クーポン割引")))
+                .andExpect(content().string(containsString("¥0")))
                 .andExpect(content().string(containsString("ご請求金額")))
                 .andExpect(content().string(containsString("¥16,940")));
+    }
+
+    /**
+     * 有効なクーポン番号指定時に割引後の金額が表示されることを検証します。
+     *
+     * @throws Exception テスト失敗時
+     */
+    @Test
+    void showOrderConfirmAppliesDiscountWhenDiscountCodeIsValid() throws Exception {
+        stubFilledCart();
+
+        mockMvc.perform(get("/orders/confirm").param("discountCode", "1001"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("appliedDiscountCode", 1001L))
+                .andExpect(model().attribute("discountAmount", 1694))
+                .andExpect(model().attribute("billingAmount", 15246))
+                .andExpect(content().string(containsString("適用中のクーポン番号: <span>1001</span>")))
+                .andExpect(content().string(containsString("¥1,694")))
+                .andExpect(content().string(containsString("¥15,246")));
     }
 
     /**
@@ -184,6 +208,39 @@ class OrderConfirmControllerMockTest {
     }
 
     /**
+     * 有効なクーポン適用時に割引付きURLへリダイレクトすることを検証します。
+     *
+     * @throws Exception テスト失敗時
+     */
+    @Test
+    void applyDiscountCodeRedirectsToConfirmWhenCodeIsValid() throws Exception {
+        stubFilledCart();
+
+        mockMvc.perform(post("/orders/confirm/coupon")
+                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .param("discountCode", "1001"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/orders/confirm?discountCode=1001"));
+    }
+
+    /**
+     * 存在しないクーポン適用時は同画面でエラー表示することを検証します。
+     *
+     * @throws Exception テスト失敗時
+     */
+    @Test
+    void applyDiscountCodeReturnsOrderConfirmWhenCodeIsInvalid() throws Exception {
+        stubFilledCart();
+
+        mockMvc.perform(post("/orders/confirm/coupon")
+                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .param("discountCode", "9999"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("order-confirm"))
+                .andExpect(content().string(containsString("クーポン番号が正しくありません。")));
+    }
+
+    /**
      * 正常な注文確定後に注文完了画面へリダイレクトすることを検証します。
      *
      * @throws Exception テスト失敗時
@@ -199,6 +256,7 @@ class OrderConfirmControllerMockTest {
 
         MvcResult result = mockMvc.perform(post("/orders")
                         .session(session)
+                        .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "1500001")
                         .param("address", "東京都千代田区1-1-1")
@@ -224,6 +282,7 @@ class OrderConfirmControllerMockTest {
 
         mockMvc.perform(post("/orders")
                         .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "1234567")
                         .param("address", "東京都千代田区1-1-1")
@@ -245,6 +304,7 @@ class OrderConfirmControllerMockTest {
 
         mockMvc.perform(post("/orders")
                         .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .param("discountCode", "1001")
                         .param("customerName", "山田 花子")
                         .param("postalCode", "7654321")
                         .param("address", "東京都新宿区1-2-3")
@@ -266,6 +326,7 @@ class OrderConfirmControllerMockTest {
 
         mockMvc.perform(post("/orders")
                         .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .param("discountCode", "1001")
                         .param("customerName", "")
                         .param("postalCode", "1500001")
                         .param("address", "東京都千代田区1-1-1")
@@ -288,6 +349,7 @@ class OrderConfirmControllerMockTest {
 
         mockMvc.perform(post("/orders")
                         .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "")
                         .param("address", "東京都千代田区1-1-1")
@@ -310,6 +372,7 @@ class OrderConfirmControllerMockTest {
 
         mockMvc.perform(post("/orders")
                         .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "123456")
                         .param("address", "東京都千代田区1-1-1")
@@ -332,6 +395,7 @@ class OrderConfirmControllerMockTest {
 
         mockMvc.perform(post("/orders")
                         .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "12345678")
                         .param("address", "東京都千代田区1-1-1")
@@ -354,6 +418,7 @@ class OrderConfirmControllerMockTest {
 
         mockMvc.perform(post("/orders")
                         .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "1500001")
                         .param("address", "")
@@ -376,6 +441,7 @@ class OrderConfirmControllerMockTest {
 
         mockMvc.perform(post("/orders")
                         .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "1500001")
                         .param("address", "東京都千代田区1-1-1")
@@ -398,6 +464,7 @@ class OrderConfirmControllerMockTest {
 
         mockMvc.perform(post("/orders")
                         .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "1500001")
                         .param("address", "東京都千代田区1-1-1")
@@ -421,6 +488,7 @@ class OrderConfirmControllerMockTest {
 
         mockMvc.perform(post("/orders")
                         .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "1500001")
                         .param("address", "東京都千代田区1-1-1")
@@ -441,6 +509,10 @@ class OrderConfirmControllerMockTest {
         when(cartService.getTotalAmount()).thenReturn(15940);
         when(cartService.getShippingAmount()).thenReturn(1000);
         when(cartService.getBillingAmount()).thenReturn(16940);
+        when(cartService.isDiscountCodeAvailable(1001L)).thenReturn(true);
+        when(cartService.isDiscountCodeAvailable(9999L)).thenReturn(false);
+        when(cartService.getDiscountAmount(1001L)).thenReturn(1694);
+        when(cartService.getDiscountedBillingAmount(1001L)).thenReturn(15246);
     }
 
     /**
