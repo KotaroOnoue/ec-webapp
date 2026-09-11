@@ -107,9 +107,17 @@
                             <span>商品点数</span>
                             <strong th:text="${cartItemCount} + '点'">0点</strong>
                         </div>
-                        <div class="amount-row total-row">
-                            <span>合計金額</span>
+                        <div class="amount-row">
+                            <span>商品合計</span>
                             <strong th:text="'¥' + ${#numbers.formatInteger(totalAmount, 0, 'COMMA')}">¥0</strong>
+                        </div>
+                        <div class="amount-row">
+                            <span>送料</span>
+                            <strong th:text="'¥' + ${#numbers.formatInteger(shippingAmount, 0, 'COMMA')}">¥0</strong>
+                        </div>
+                        <div class="amount-row total-row">
+                            <span>ご請求金額</span>
+                            <strong th:text="'¥' + ${#numbers.formatInteger(billingAmount, 0, 'COMMA')}">¥0</strong>
                         </div>
                     </div>
                 </aside>

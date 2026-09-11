@@ -101,7 +101,13 @@ public class ProductController {
             Model model) {
         if (bindingResult.hasErrors()) {
             if (isProductDetailPath(redirectTo)) {
-                ProductModel product = productService.getProductById(cartAddForm.getProductId());
+                Long productId = resolveProductIdForDetail(cartAddForm.getProductId(), redirectTo);
+                if (productId == null) {
+                    preparePageModel(cart, model);
+                    return "products";
+                }
+                cartAddForm.setProductId(productId);
+                ProductModel product = productService.getProductById(productId);
                 prepareProductDetailModel(product, cart, model);
                 return "products-detail";
             }
@@ -150,5 +156,22 @@ public class ProductController {
      */
     public boolean isProductDetailPath(String redirectTo) {
         return redirectTo != null && redirectTo.matches("/products/\\d+");
+    }
+
+    /**
+     * 商品詳細画面に戻る際に利用する商品IDを解決します。
+     *
+     * @param productId フォームに含まれる商品ID
+     * @param redirectTo 戻り先パス
+     * @return 商品ID。解決できない場合はnull
+     */
+    public Long resolveProductIdForDetail(Long productId, String redirectTo) {
+        if (productId != null) {
+            return productId;
+        }
+        if (!isProductDetailPath(redirectTo)) {
+            return null;
+        }
+        return Long.valueOf(redirectTo.substring(redirectTo.lastIndexOf('/') + 1));
     }
 }

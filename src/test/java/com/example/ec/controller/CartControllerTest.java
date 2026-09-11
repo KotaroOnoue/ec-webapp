@@ -61,7 +61,10 @@ class CartControllerTest {
                 .andExpect(view().name("cart"))
                 .andExpect(content().string(containsString("ワイヤレスイヤホン")))
                 .andExpect(content().string(containsString("ゲーミングマウス")))
-                .andExpect(content().string(containsString("¥15,940")));
+                .andExpect(content().string(containsString("¥15,940")))
+                .andExpect(content().string(containsString("送料")))
+                .andExpect(content().string(containsString("¥1,000")))
+                .andExpect(content().string(containsString("¥16,940")));
     }
 
     /**

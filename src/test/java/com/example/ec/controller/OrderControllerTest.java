@@ -61,6 +61,9 @@ class OrderControllerTest {
                 .andExpect(view().name("order-confirm"))
                 .andExpect(content().string(containsString("ワイヤレスイヤホン")))
                 .andExpect(content().string(containsString("ゲーミングマウス")))
+                .andExpect(content().string(containsString("送料")))
+                .andExpect(content().string(containsString("¥1,000")))
+                .andExpect(content().string(containsString("¥16,940")))
                 .andExpect(content().string(containsString("注文を確定する")));
     }
 

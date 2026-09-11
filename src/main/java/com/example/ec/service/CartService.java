@@ -15,6 +15,9 @@ import com.example.ec.service.model.CartItemModel;
 @Service
 public class CartService {
 
+    /** 送料です。 */
+    private static final int SHIPPING_AMOUNT = 1000;
+
     /** カートRepositoryです。 */
     @Autowired
     private CartRepository cartRepository;
@@ -43,6 +46,24 @@ public class CartService {
         return getCartItems().stream()
                 .mapToInt(CartItemModel::getSubtotal)
                 .sum();
+    }
+
+    /**
+     * カート内商品の送料を取得します。
+     *
+     * @return 送料
+     */
+    public int getShippingAmount() {
+        return getCartItems().isEmpty() ? 0 : SHIPPING_AMOUNT;
+    }
+
+    /**
+     * カート内商品の請求合計金額を取得します。
+     *
+     * @return 請求合計金額
+     */
+    public int getBillingAmount() {
+        return getTotalAmount() + getShippingAmount();
     }
 
     /**

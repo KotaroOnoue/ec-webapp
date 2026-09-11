@@ -113,5 +113,7 @@ public class OrderController {
         model.addAttribute("cartItems", cartService.getCartItems());
         model.addAttribute("cartItemCount", cartService.getTotalQuantity());
         model.addAttribute("totalAmount", cartService.getTotalAmount());
+        model.addAttribute("shippingAmount", cartService.getShippingAmount());
+        model.addAttribute("billingAmount", cartService.getBillingAmount());
     }
 }
