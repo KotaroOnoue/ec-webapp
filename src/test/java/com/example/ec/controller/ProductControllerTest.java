@@ -2,6 +2,7 @@ package com.example.ec.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
@@ -74,11 +75,10 @@ class ProductControllerTest {
      */
     @Test
     void addToCartRedirectsWithErrorWhenStockIsExceeded() throws Exception {
-        Map<Long, Integer> cart = new LinkedHashMap<>();
-        cart.put(1L, 10);
+        jdbcTemplate.update("INSERT INTO cart_item (product_id, quantity) VALUES (1, 10)");
 
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", cart)
+                .with(csrf())
                         .param("productId", "1")
                 .param("quantity", "1")
                 .param("redirectTo", "/products"))
@@ -95,7 +95,7 @@ class ProductControllerTest {
     @Test
     void addToCartRedirectsWhenAdditionSucceeds() throws Exception {
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("productId", "1")
                 .param("quantity", "1")
                 .param("redirectTo", "/products"))
@@ -126,7 +126,7 @@ class ProductControllerTest {
     @Test
     void addToCartFromDetailRedirectsAndStoresQuantity() throws Exception {
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("productId", "2")
                         .param("quantity", "3")
                         .param("redirectTo", "/products/2"))

@@ -92,6 +92,7 @@
                                                     th:action="@{/cart/items}"
                           th:object="${cartAddForm}"
                           method="post">
+                                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                         <input type="hidden" th:field="*{productId}">
                                                 <input type="hidden" name="redirectTo" th:value="@{/products/{productId}(productId=${product.productId})}">
 

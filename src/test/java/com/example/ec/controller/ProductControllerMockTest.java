@@ -10,6 +10,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -34,7 +35,10 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.example.ec.exception.InsufficientStockException;
 import com.example.ec.exception.ProductUnavailableException;
+import com.example.ec.service.CartService;
 import com.example.ec.service.ProductService;
+import com.example.ec.service.model.CartItemModel;
+import com.example.ec.service.model.CartSummaryModel;
 import com.example.ec.service.model.ProductModel;
 
 /**
@@ -54,6 +58,10 @@ class ProductControllerMockTest {
     @MockitoBean
     private ProductService productService;
 
+    /** カートServiceのモックです。 */
+    @MockitoBean
+    private CartService cartService;
+
     /**
      * テストごとにMockMvcを初期化します。
      */
@@ -70,6 +78,7 @@ class ProductControllerMockTest {
     @Test
     void showProductsDisplaysPageTitleHeaderAndProductCards() throws Exception {
         when(productService.getOnSaleProducts()).thenReturn(createProductList());
+        stubCartSummary(0);
 
         mockMvc.perform(get("/products"))
                 .andExpect(status().isOk())
@@ -98,6 +107,7 @@ class ProductControllerMockTest {
     @Test
     void showProductsDoesNotDisplayStoppedProduct() throws Exception {
         when(productService.getOnSaleProducts()).thenReturn(createProductList());
+        stubCartSummary(0);
 
         mockMvc.perform(get("/products"))
                 .andExpect(status().isOk())
@@ -112,6 +122,7 @@ class ProductControllerMockTest {
     @Test
     void showProductsDisplaysDisabledCartButtonForOutOfStockProduct() throws Exception {
         when(productService.getOnSaleProducts()).thenReturn(createProductList());
+        stubCartSummary(0);
 
         mockMvc.perform(get("/products"))
                 .andExpect(status().isOk())
@@ -120,18 +131,17 @@ class ProductControllerMockTest {
     }
 
     /**
-     * セッション上のカート数量合計がヘッダーに表示されることを検証します。
+    * カート数量合計がヘッダーに表示されることを検証します。
      *
      * @throws Exception テスト失敗時
      */
     @Test
-    void showProductsDisplaysCartItemCountFromSessionCart() throws Exception {
+    void showProductsDisplaysCartItemCountFromCartSummary() throws Exception {
         when(productService.getOnSaleProducts()).thenReturn(createProductList());
-        Map<Long, Integer> cart = new LinkedHashMap<>();
-        cart.put(1L, 2);
-        cart.put(2L, 3);
+        stubCartSummary(5, createCartItemModel(1L, "ワイヤレスイヤホン", 5980, 2),
+                createCartItemModel(2L, "ゲーミングマウス", 3980, 3));
 
-        mockMvc.perform(get("/products").sessionAttr("cart", cart))
+        mockMvc.perform(get("/products"))
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("cartItemCount", 5))
                 .andExpect(content().string(containsString("cart-count\">5</span>")));
@@ -145,6 +155,7 @@ class ProductControllerMockTest {
     @Test
     void showProductsSetsInitialCartAddForm() throws Exception {
         when(productService.getOnSaleProducts()).thenReturn(createProductList());
+        stubCartSummary(0);
 
         mockMvc.perform(get("/products"))
                 .andExpect(status().isOk())
@@ -159,8 +170,10 @@ class ProductControllerMockTest {
      */
     @Test
     void addToCartRedirectsWhenAdditionSucceeds() throws Exception {
+        when(productService.getCurrentCartQuantity(1L)).thenReturn(0);
+
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("productId", "1")
                         .param("quantity", "1")
                         .param("redirectTo", "/products"))
@@ -178,13 +191,12 @@ class ProductControllerMockTest {
      */
     @Test
     void addToCartRedirectsWithErrorWhenStockIsExceeded() throws Exception {
+        when(productService.getCurrentCartQuantity(1L)).thenReturn(10);
         doThrow(new InsufficientStockException("指定した数量は在庫数を超えています。"))
                 .when(productService).validateAddToCart(1L, 10, 1);
-        Map<Long, Integer> cart = new LinkedHashMap<>();
-        cart.put(1L, 10);
 
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", cart)
+                .with(csrf())
                         .param("productId", "1")
                         .param("quantity", "1")
                         .param("redirectTo", "/products"))
@@ -200,11 +212,12 @@ class ProductControllerMockTest {
      */
     @Test
     void addToCartRedirectsWithErrorWhenProductIsUnavailable() throws Exception {
+        when(productService.getCurrentCartQuantity(4L)).thenReturn(0);
         doThrow(new ProductUnavailableException("指定した商品は販売中ではありません。"))
                 .when(productService).validateAddToCart(4L, 0, 1);
 
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                .with(csrf())
                         .param("productId", "4")
                         .param("quantity", "1")
                         .param("redirectTo", "/products"))
@@ -221,9 +234,10 @@ class ProductControllerMockTest {
     @Test
     void addToCartReturnsProductsWhenQuantityIsMissing() throws Exception {
         when(productService.getOnSaleProducts()).thenReturn(createProductList());
+        stubCartSummary(0);
 
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                .with(csrf())
                         .param("productId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("products"))
@@ -240,9 +254,10 @@ class ProductControllerMockTest {
     @Test
     void addToCartReturnsProductsWhenQuantityIsZero() throws Exception {
         when(productService.getOnSaleProducts()).thenReturn(createProductList());
+        stubCartSummary(0);
 
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("productId", "1")
                         .param("quantity", "0"))
                 .andExpect(status().isOk())
@@ -260,9 +275,10 @@ class ProductControllerMockTest {
     @Test
     void addToCartReturnsProductsWhenQuantityExceedsUpperLimit() throws Exception {
         when(productService.getOnSaleProducts()).thenReturn(createProductList());
+        stubCartSummary(0);
 
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("productId", "1")
                         .param("quantity", "100"))
                 .andExpect(status().isOk())
@@ -280,9 +296,10 @@ class ProductControllerMockTest {
     @Test
     void addToCartReturnsProductsWhenProductIdIsMissing() throws Exception {
         when(productService.getOnSaleProducts()).thenReturn(createProductList());
+        stubCartSummary(0);
 
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                .with(csrf())
                         .param("quantity", "1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("products"))
@@ -326,6 +343,47 @@ class ProductControllerMockTest {
         productModel.setStatus(status);
         productModel.setImageUrl(imageUrl);
         return productModel;
+    }
+
+    /**
+     * テスト用のカート集計をスタブします。
+     *
+     * @param totalQuantity 合計数量
+     * @param cartItems カート商品
+     */
+    private void stubCartSummary(int totalQuantity, CartItemModel... cartItems) {
+        CartSummaryModel cartSummaryModel = new CartSummaryModel();
+        Map<Long, Integer> cartQuantities = new LinkedHashMap<>();
+        for (CartItemModel cartItem : cartItems) {
+            cartQuantities.put(cartItem.getProductId(), cartItem.getQuantity());
+        }
+        cartSummaryModel.setCartItems(List.of(cartItems));
+        cartSummaryModel.setCartQuantities(cartQuantities);
+        cartSummaryModel.setTotalQuantity(totalQuantity);
+        cartSummaryModel.setTotalAmount(0);
+        cartSummaryModel.setShippingAmount(0);
+        cartSummaryModel.setDiscountAmount(0);
+        cartSummaryModel.setBillingAmount(0);
+        when(cartService.getCartSummary()).thenReturn(cartSummaryModel);
+    }
+
+    /**
+     * テスト用のカート商品モデルを生成します。
+     *
+     * @param productId 商品ID
+     * @param name 商品名
+     * @param price 単価
+     * @param quantity 数量
+     * @return カート商品モデル
+     */
+    private CartItemModel createCartItemModel(Long productId, String name, Integer price, Integer quantity) {
+        CartItemModel cartItemModel = new CartItemModel();
+        cartItemModel.setProductId(productId);
+        cartItemModel.setName(name);
+        cartItemModel.setPrice(price);
+        cartItemModel.setQuantity(quantity);
+        cartItemModel.setSubtotal(price * quantity);
+        return cartItemModel;
     }
 
     /**

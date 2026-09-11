@@ -1,8 +1,5 @@
 package com.example.ec.controller;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,10 +9,11 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.SessionAttributes;
 
 import com.example.ec.controller.form.CartAddForm;
+import com.example.ec.service.CartService;
 import com.example.ec.service.ProductService;
+import com.example.ec.service.model.CartSummaryModel;
 import com.example.ec.service.model.ProductModel;
 
 import jakarta.validation.Valid;
@@ -24,33 +22,25 @@ import jakarta.validation.Valid;
  * 商品一覧画面を制御するControllerです。
  */
 @Controller
-@SessionAttributes("cart")
 public class ProductController {
 
     /** 商品Serviceです。 */
     @Autowired
     private ProductService productService;
 
-    /**
-     * セッション上のカート情報を初期化します。
-     *
-     * @return カート情報
-     */
-    @ModelAttribute("cart")
-    public Map<Long, Integer> createCart() {
-        return new LinkedHashMap<>();
-    }
+    /** カートServiceです。 */
+    @Autowired
+    private CartService cartService;
 
     /**
      * 商品一覧画面を表示します。
      *
-     * @param cart セッション上のカート
      * @param model 画面モデル
      * @return テンプレート名
      */
     @GetMapping("/products")
-    public String showProducts(@ModelAttribute("cart") Map<Long, Integer> cart, Model model) {
-        preparePageModel(cart, model);
+    public String showProducts(Model model) {
+        preparePageModel(model);
         if (!model.containsAttribute("cartAddForm")) {
             CartAddForm cartAddForm = new CartAddForm();
             cartAddForm.setQuantity(1);
@@ -63,17 +53,15 @@ public class ProductController {
      * 商品詳細画面を表示します。
      *
      * @param productId 商品ID
-     * @param cart セッション上のカート
      * @param model 画面モデル
      * @return テンプレート名
      */
     @GetMapping("/products/{productId}")
     public String showProductDetail(
             @PathVariable("productId") Long productId,
-            @ModelAttribute("cart") Map<Long, Integer> cart,
             Model model) {
         ProductModel product = productService.getProductById(productId);
-        prepareProductDetailModel(product, cart, model);
+        prepareProductDetailModel(product, model);
         if (!model.containsAttribute("cartAddForm")) {
             CartAddForm cartAddForm = new CartAddForm();
             cartAddForm.setProductId(productId);
@@ -88,7 +76,6 @@ public class ProductController {
      *
      * @param cartAddForm カート追加フォーム
      * @param bindingResult バリデーション結果
-     * @param cart セッション上のカート
      * @param model 画面モデル
      * @return 遷移先テンプレート名
      */
@@ -97,28 +84,26 @@ public class ProductController {
             @Valid @ModelAttribute("cartAddForm") CartAddForm cartAddForm,
             BindingResult bindingResult,
             @RequestParam(name = "redirectTo", defaultValue = "/products") String redirectTo,
-            @ModelAttribute("cart") Map<Long, Integer> cart,
             Model model) {
         if (bindingResult.hasErrors()) {
             if (isProductDetailPath(redirectTo)) {
                 Long productId = resolveProductIdForDetail(cartAddForm.getProductId(), redirectTo);
                 if (productId == null) {
-                    preparePageModel(cart, model);
+                    preparePageModel(model);
                     return "products";
                 }
                 cartAddForm.setProductId(productId);
                 ProductModel product = productService.getProductById(productId);
-                prepareProductDetailModel(product, cart, model);
+                prepareProductDetailModel(product, model);
                 return "products-detail";
             }
-            preparePageModel(cart, model);
+            preparePageModel(model);
             return "products";
         }
 
-        int currentQuantity = cart.getOrDefault(cartAddForm.getProductId(), 0);
+        int currentQuantity = productService.getCurrentCartQuantity(cartAddForm.getProductId());
         productService.validateAddToCart(cartAddForm.getProductId(), currentQuantity, cartAddForm.getQuantity());
         productService.addCartItem(cartAddForm.getProductId(), cartAddForm.getQuantity());
-        cart.put(cartAddForm.getProductId(), currentQuantity + cartAddForm.getQuantity());
 
         return "redirect:" + redirectTo;
     }
@@ -126,24 +111,26 @@ public class ProductController {
     /**
      * 商品一覧画面に必要な共通モデルを設定します。
      *
-     * @param cart セッション上のカート
      * @param model 画面モデル
      */
-    public void preparePageModel(Map<Long, Integer> cart, Model model) {
+    public void preparePageModel(Model model) {
+        CartSummaryModel cartSummary = cartService.getCartSummary();
         model.addAttribute("products", productService.getOnSaleProducts());
-        model.addAttribute("cartItemCount", cart.values().stream().mapToInt(Integer::intValue).sum());
+        model.addAttribute("cartItemCount", cartSummary.getTotalQuantity());
+        model.addAttribute("cart", cartSummary.getCartQuantities());
     }
 
     /**
      * 商品詳細画面に必要な共通モデルを設定します。
      *
      * @param product 商品詳細
-     * @param cart セッション上のカート
      * @param model 画面モデル
      */
-    public void prepareProductDetailModel(ProductModel product, Map<Long, Integer> cart, Model model) {
+    public void prepareProductDetailModel(ProductModel product, Model model) {
+        CartSummaryModel cartSummary = cartService.getCartSummary();
         model.addAttribute("product", product);
-        model.addAttribute("cartItemCount", cart.values().stream().mapToInt(Integer::intValue).sum());
+        model.addAttribute("cartItemCount", cartSummary.getTotalQuantity());
+        model.addAttribute("cart", cartSummary.getCartQuantities());
         model.addAttribute("purchasable", "ON_SALE".equals(product.getStatus()) && product.getStock() > 0);
         model.addAttribute("maxSelectableQuantity", Math.min(product.getStock(), 99));
     }

@@ -10,7 +10,9 @@ import org.springframework.web.servlet.FlashMap;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import com.example.ec.exception.InsufficientStockException;
+import com.example.ec.exception.InvalidCartQuantityException;
 import com.example.ec.exception.ProductUnavailableException;
+import com.example.ec.exception.CartEmptyException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -52,13 +54,20 @@ public class GlobalExceptionHandler {
      * @param request リクエスト
      * @return リダイレクト先
      */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public String handleIllegalArgumentException(HttpServletRequest request) {
-        String requestUri = request.getRequestURI();
-        if (requestUri != null && requestUri.equals("/orders")) {
-            return redirectWithMessage(request, "error.order.emptyCart");
-        }
+    @ExceptionHandler(InvalidCartQuantityException.class)
+    public String handleInvalidCartQuantityException(HttpServletRequest request) {
         return redirectWithMessage(request, "error.cart.invalidQuantity");
+    }
+
+    /**
+     * 空カートでの注文例外を処理します。
+     *
+     * @param request リクエスト
+     * @return リダイレクト先
+     */
+    @ExceptionHandler(CartEmptyException.class)
+    public String handleCartEmptyException(HttpServletRequest request) {
+        return redirectWithMessage(request, "error.order.emptyCart");
     }
 
     /**
@@ -89,7 +98,7 @@ public class GlobalExceptionHandler {
         if (requestUri != null && requestUri.matches(".*/cart/items/\\d+/(update|delete)$")) {
             return "/cart";
         }
-        if (requestUri != null && requestUri.equals("/orders")) {
+        if (requestUri != null && (requestUri.equals("/orders") || requestUri.equals("/orders/confirm/coupon"))) {
             return "/orders/confirm";
         }
         return "/products";

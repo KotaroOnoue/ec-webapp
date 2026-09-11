@@ -21,7 +21,7 @@
                 <span class="hero-tag">PRODUCT LIST</span>
                 <h2 class="page-title" id="product-list-title">商品一覧</h2>
                 <p class="hero-copy">
-                    販売中の商品をデータベースから取得して表示しています。商品をカートへ追加すると、セッション内の数量を加味して在庫数を超えないか検証します。
+                    販売中の商品をデータベースから取得して表示しています。商品をカートへ追加すると、現在のカート登録数量を加味して在庫数を超えないか検証します。
                 </p>
             </section>
 
@@ -58,6 +58,7 @@
                             <a class="action-button secondary" th:href="@{/products/{productId}(productId=${product.productId})}">詳細を見る</a>
 
                             <form class="cart-form" th:action="@{/cart/items}" method="post">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                                 <input type="hidden" name="productId" th:value="${product.productId}">
                                 <input type="hidden" name="quantity" value="1">
                                 <input type="hidden" name="redirectTo" value="/products">

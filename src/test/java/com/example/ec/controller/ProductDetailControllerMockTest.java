@@ -10,6 +10,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -33,7 +34,10 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.example.ec.exception.InsufficientStockException;
 import com.example.ec.exception.ProductUnavailableException;
+import com.example.ec.service.CartService;
 import com.example.ec.service.ProductService;
+import com.example.ec.service.model.CartItemModel;
+import com.example.ec.service.model.CartSummaryModel;
 import com.example.ec.service.model.ProductModel;
 
 /**
@@ -53,6 +57,10 @@ class ProductDetailControllerMockTest {
     @MockitoBean
     private ProductService productService;
 
+        /** カートServiceのモックです。 */
+        @MockitoBean
+        private CartService cartService;
+
     /**
      * テストごとにMockMvcを初期化します。
      */
@@ -68,6 +76,7 @@ class ProductDetailControllerMockTest {
      */
     @Test
     void showProductDetailDisplaysPageTitleHeaderAndProductInfo() throws Exception {
+                stubCartSummary(0);
         when(productService.getProductById(1L)).thenReturn(
                 createProductModel(1L, "ワイヤレスイヤホン", "ノイズキャンセリング対応", 5980, 10, "ON_SALE", "/images/products/1.png"));
 
@@ -99,6 +108,7 @@ class ProductDetailControllerMockTest {
      */
     @Test
     void showProductDetailDisplaysPurchasableControlsWhenInStock() throws Exception {
+                stubCartSummary(0);
         when(productService.getProductById(1L)).thenReturn(
                 createProductModel(1L, "ワイヤレスイヤホン", "ノイズキャンセリング対応", 5980, 10, "ON_SALE", "/images/products/1.png"));
 
@@ -118,6 +128,7 @@ class ProductDetailControllerMockTest {
      */
     @Test
     void showProductDetailDisplaysDisabledControlsWhenOutOfStock() throws Exception {
+                stubCartSummary(0);
         when(productService.getProductById(3L)).thenReturn(
                 createProductModel(3L, "USB-Cハブ", "5in1モデル", 2980, 0, "ON_SALE", "/images/products/3.png"));
 
@@ -138,6 +149,7 @@ class ProductDetailControllerMockTest {
      */
     @Test
     void showProductDetailDisplaysDisabledControlsWhenStopped() throws Exception {
+                stubCartSummary(0);
         when(productService.getProductById(4L)).thenReturn(
                 createProductModel(4L, "Webカメラ", "フルHD対応", 4980, 8, "STOPPED", "/images/products/4.png"));
 
@@ -157,6 +169,7 @@ class ProductDetailControllerMockTest {
      */
     @Test
     void showProductDetailLimitsSelectableQuantityToStockBoundary() throws Exception {
+                stubCartSummary(0);
         when(productService.getProductById(5L)).thenReturn(
                 createProductModel(5L, "LANケーブル", "カテゴリ6A", 980, 1, "ON_SALE", "/images/products/5.png"));
 
@@ -174,6 +187,7 @@ class ProductDetailControllerMockTest {
      */
     @Test
     void showProductDetailLimitsSelectableQuantityToNinetyNine() throws Exception {
+                stubCartSummary(0);
         when(productService.getProductById(10L)).thenReturn(
                 createProductModel(10L, "4Kモニター", "高解像度モニター", 49800, 120, "ON_SALE", "/images/products/10.png"));
 
@@ -185,19 +199,18 @@ class ProductDetailControllerMockTest {
     }
 
     /**
-     * セッション上のカート数量合計がヘッダーに表示されることを検証します。
+        * カート数量合計がヘッダーに表示されることを検証します。
      *
      * @throws Exception テスト失敗時
      */
     @Test
-    void showProductDetailDisplaysCartItemCountFromSessionCart() throws Exception {
+    void showProductDetailDisplaysCartItemCountFromCartSummary() throws Exception {
+        stubCartSummary(5, createCartItemModel(1L, "ワイヤレスイヤホン", 5980, 2),
+                createCartItemModel(2L, "ゲーミングマウス", 3980, 3));
         when(productService.getProductById(1L)).thenReturn(
                 createProductModel(1L, "ワイヤレスイヤホン", "ノイズキャンセリング対応", 5980, 10, "ON_SALE", "/images/products/1.png"));
-        Map<Long, Integer> cart = new LinkedHashMap<>();
-        cart.put(1L, 2);
-        cart.put(2L, 3);
 
-        mockMvc.perform(get("/products/1").sessionAttr("cart", cart))
+        mockMvc.perform(get("/products/1"))
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("cartItemCount", 5))
                 .andExpect(content().string(containsString("cart-count\">5</span>")));
@@ -210,6 +223,7 @@ class ProductDetailControllerMockTest {
      */
     @Test
     void showProductDetailSetsInitialCartAddForm() throws Exception {
+                stubCartSummary(0);
         when(productService.getProductById(1L)).thenReturn(
                 createProductModel(1L, "ワイヤレスイヤホン", "ノイズキャンセリング対応", 5980, 10, "ON_SALE", "/images/products/1.png"));
 
@@ -242,11 +256,10 @@ class ProductDetailControllerMockTest {
      */
     @Test
     void addToCartFromDetailRedirectsWhenAdditionSucceeds() throws Exception {
-        Map<Long, Integer> cart = new LinkedHashMap<>();
-        cart.put(2L, 2);
+                when(productService.getCurrentCartQuantity(2L)).thenReturn(2);
 
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", cart)
+                                                .with(csrf())
                         .param("productId", "2")
                         .param("quantity", "3")
                         .param("redirectTo", "/products/2"))
@@ -264,13 +277,12 @@ class ProductDetailControllerMockTest {
      */
     @Test
     void addToCartFromDetailRedirectsWithErrorWhenStockIsExceeded() throws Exception {
-        Map<Long, Integer> cart = new LinkedHashMap<>();
-        cart.put(1L, 10);
+        when(productService.getCurrentCartQuantity(1L)).thenReturn(10);
         doThrow(new InsufficientStockException("指定した数量は在庫数を超えています。"))
                 .when(productService).validateAddToCart(1L, 10, 1);
 
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", cart)
+                        .with(csrf())
                         .param("productId", "1")
                         .param("quantity", "1")
                         .param("redirectTo", "/products/1"))
@@ -286,11 +298,12 @@ class ProductDetailControllerMockTest {
      */
     @Test
     void addToCartFromDetailReturnsDetailWhenQuantityIsMissing() throws Exception {
+        stubCartSummary(0);
         when(productService.getProductById(1L)).thenReturn(
                 createProductModel(1L, "ワイヤレスイヤホン", "ノイズキャンセリング対応", 5980, 10, "ON_SALE", "/images/products/1.png"));
 
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("productId", "1")
                         .param("redirectTo", "/products/1"))
                 .andExpect(status().isOk())
@@ -307,11 +320,12 @@ class ProductDetailControllerMockTest {
      */
     @Test
     void addToCartFromDetailReturnsDetailWhenQuantityIsZero() throws Exception {
+        stubCartSummary(0);
         when(productService.getProductById(1L)).thenReturn(
                 createProductModel(1L, "ワイヤレスイヤホン", "ノイズキャンセリング対応", 5980, 10, "ON_SALE", "/images/products/1.png"));
 
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("productId", "1")
                         .param("quantity", "0")
                         .param("redirectTo", "/products/1"))
@@ -329,11 +343,12 @@ class ProductDetailControllerMockTest {
      */
     @Test
     void addToCartFromDetailReturnsDetailWhenProductIdIsMissing() throws Exception {
+        stubCartSummary(0);
         when(productService.getProductById(1L)).thenReturn(
                 createProductModel(1L, "ワイヤレスイヤホン", "ノイズキャンセリング対応", 5980, 10, "ON_SALE", "/images/products/1.png"));
 
         mockMvc.perform(post("/cart/items")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("quantity", "1")
                         .param("redirectTo", "/products/1"))
                 .andExpect(status().isOk())
@@ -368,6 +383,47 @@ class ProductDetailControllerMockTest {
         productModel.setImageUrl(imageUrl);
         return productModel;
     }
+
+        /**
+         * テスト用のカート集計をスタブします。
+         *
+         * @param totalQuantity 合計数量
+         * @param cartItems カート商品
+         */
+        private void stubCartSummary(int totalQuantity, CartItemModel... cartItems) {
+                CartSummaryModel cartSummaryModel = new CartSummaryModel();
+                Map<Long, Integer> cartQuantities = new LinkedHashMap<>();
+                for (CartItemModel cartItem : cartItems) {
+                        cartQuantities.put(cartItem.getProductId(), cartItem.getQuantity());
+                }
+                cartSummaryModel.setCartItems(java.util.List.of(cartItems));
+                cartSummaryModel.setCartQuantities(cartQuantities);
+                cartSummaryModel.setTotalQuantity(totalQuantity);
+                cartSummaryModel.setTotalAmount(0);
+                cartSummaryModel.setShippingAmount(0);
+                cartSummaryModel.setDiscountAmount(0);
+                cartSummaryModel.setBillingAmount(0);
+                when(cartService.getCartSummary()).thenReturn(cartSummaryModel);
+        }
+
+        /**
+         * テスト用のカート商品モデルを生成します。
+         *
+         * @param productId 商品ID
+         * @param name 商品名
+         * @param price 単価
+         * @param quantity 数量
+         * @return カート商品モデル
+         */
+        private CartItemModel createCartItemModel(Long productId, String name, Integer price, Integer quantity) {
+                CartItemModel cartItemModel = new CartItemModel();
+                cartItemModel.setProductId(productId);
+                cartItemModel.setName(name);
+                cartItemModel.setPrice(price);
+                cartItemModel.setQuantity(quantity);
+                cartItemModel.setSubtotal(price * quantity);
+                return cartItemModel;
+        }
 
     /**
      * カート追加処理のService呼び出しが行われないことを検証します。

@@ -4,11 +4,18 @@ import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.ec.controller.form.OrderForm;
+import com.example.ec.exception.CartEmptyException;
+import com.example.ec.exception.InsufficientStockException;
+import com.example.ec.exception.ProductUnavailableException;
 import com.example.ec.repository.CartRepository;
 import com.example.ec.repository.OrderRepository;
+import com.example.ec.repository.ProductRepository;
 import com.example.ec.repository.entity.OrderEntity;
+import com.example.ec.repository.entity.ProductEntity;
+import com.example.ec.service.model.CartItemModel;
 import com.example.ec.service.model.OrderCompleteModel;
 
 /**
@@ -25,6 +32,10 @@ public class OrderService {
     @Autowired
     private CartRepository cartRepository;
 
+    /** 商品Repositoryです。 */
+    @Autowired
+    private ProductRepository productRepository;
+
     /** カートServiceです。 */
     @Autowired
     private CartService cartService;
@@ -35,10 +46,25 @@ public class OrderService {
      * @param orderForm 注文フォーム
      * @return 保存した注文ID
      */
+    @Transactional
     public Long placeOrder(OrderForm orderForm) {
         int cartTotalAmount = cartService.getTotalAmount();
         if (cartTotalAmount <= 0) {
-            throw new IllegalArgumentException("カートに商品がありません。");
+            throw new CartEmptyException("カートに商品がありません。");
+        }
+
+        for (CartItemModel cartItem : cartService.getCartItems()) {
+            ProductEntity product = productRepository.findByProductId(cartItem.getProductId());
+            if (product == null || !"ON_SALE".equals(product.getStatus())) {
+                throw new ProductUnavailableException("販売中の商品ではありません。");
+            }
+            if (product.getStock() < cartItem.getQuantity()) {
+                throw new InsufficientStockException("在庫が不足しています。");
+            }
+            int updatedCount = productRepository.decreaseStock(cartItem.getProductId(), cartItem.getQuantity());
+            if (updatedCount != 1) {
+                throw new InsufficientStockException("在庫が不足しています。");
+            }
         }
 
         int totalAmount = cartService.getDiscountedBillingAmount(orderForm.getDiscountCode());

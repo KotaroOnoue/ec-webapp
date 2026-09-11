@@ -17,9 +17,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.example.ec.controller.form.OrderForm;
+import com.example.ec.exception.CartEmptyException;
 import com.example.ec.repository.CartRepository;
 import com.example.ec.repository.OrderRepository;
+import com.example.ec.repository.ProductRepository;
 import com.example.ec.repository.entity.OrderEntity;
+import com.example.ec.repository.entity.ProductEntity;
+import com.example.ec.service.model.CartItemModel;
 import com.example.ec.service.model.OrderCompleteModel;
 
 /**
@@ -35,6 +39,10 @@ class OrderConfirmServiceMockTest {
     /** カートRepositoryのモックです。 */
     @Mock
     private CartRepository cartRepository;
+
+    /** 商品Repositoryのモックです。 */
+    @Mock
+    private ProductRepository productRepository;
 
     /** カートServiceのモックです。 */
     @Mock
@@ -53,6 +61,9 @@ class OrderConfirmServiceMockTest {
         orderForm.setDiscountCode(1001L);
         when(cartService.getTotalAmount()).thenReturn(15940);
         when(cartService.getDiscountedBillingAmount(1001L)).thenReturn(15246);
+        when(cartService.getCartItems()).thenReturn(java.util.List.of(createCartItemModel(1L, "ワイヤレスイヤホン", 5980, 2)));
+        when(productRepository.findByProductId(1L)).thenReturn(createProductEntity(1L, 10, "ON_SALE"));
+        when(productRepository.decreaseStock(1L, 2)).thenReturn(1);
         when(orderRepository.findNextOrderId()).thenReturn(5L);
 
         Long orderId = orderService.placeOrder(orderForm);
@@ -66,6 +77,7 @@ class OrderConfirmServiceMockTest {
             eq("0312345678"),
             eq(15246),
             any());
+        verify(productRepository, times(1)).decreaseStock(1L, 2);
         verify(cartRepository, times(1)).deleteAllCartItems();
     }
 
@@ -77,7 +89,7 @@ class OrderConfirmServiceMockTest {
         OrderForm orderForm = createOrderForm();
         when(cartService.getTotalAmount()).thenReturn(0);
 
-        assertThrows(IllegalArgumentException.class, () -> orderService.placeOrder(orderForm));
+        assertThrows(CartEmptyException.class, () -> orderService.placeOrder(orderForm));
 
         verify(orderRepository, never()).findNextOrderId();
         verify(orderRepository, never()).insertOrder(any(), any(), any(), any(), any(), any(), any());
@@ -143,5 +155,40 @@ class OrderConfirmServiceMockTest {
         orderEntity.setPhoneNumber(phoneNumber);
         orderEntity.setTotalAmount(totalAmount);
         return orderEntity;
+    }
+
+    /**
+     * テスト用のカート商品モデルを生成します。
+     *
+     * @param productId 商品ID
+     * @param name 商品名
+     * @param price 単価
+     * @param quantity 数量
+     * @return カート商品モデル
+     */
+    private CartItemModel createCartItemModel(Long productId, String name, Integer price, Integer quantity) {
+        CartItemModel cartItemModel = new CartItemModel();
+        cartItemModel.setProductId(productId);
+        cartItemModel.setName(name);
+        cartItemModel.setPrice(price);
+        cartItemModel.setQuantity(quantity);
+        cartItemModel.setSubtotal(price * quantity);
+        return cartItemModel;
+    }
+
+    /**
+     * テスト用の商品Entityを生成します。
+     *
+     * @param productId 商品ID
+     * @param stock 在庫数
+     * @param status ステータス
+     * @return 商品Entity
+     */
+    private ProductEntity createProductEntity(Long productId, Integer stock, String status) {
+        ProductEntity productEntity = new ProductEntity();
+        productEntity.setProductId(productId);
+        productEntity.setStock(stock);
+        productEntity.setStatus(status);
+        return productEntity;
     }
 }

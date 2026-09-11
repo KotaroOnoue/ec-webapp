@@ -1,0 +1,13 @@
+spring:
+  h2:
+    console:
+      enabled: true
+
+  sql:
+    init:
+      mode: always
+
+logging:
+  level:
+    com.example.ec: DEBUG
+    org.springframework.web: INFO

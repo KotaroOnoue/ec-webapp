@@ -1,8 +1,6 @@
 package com.example.ec.controller;
 
-import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -14,12 +12,12 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.SessionAttributes;
 
 import com.example.ec.controller.form.CouponApplyForm;
 import com.example.ec.controller.form.OrderForm;
 import com.example.ec.service.CartService;
 import com.example.ec.service.OrderService;
+import com.example.ec.service.model.CartSummaryModel;
 
 import jakarta.validation.Valid;
 
@@ -27,7 +25,6 @@ import jakarta.validation.Valid;
  * 注文確認画面を制御するControllerです。
  */
 @Controller
-@SessionAttributes("cart")
 public class OrderController {
 
     /** カートServiceです。 */
@@ -43,31 +40,18 @@ public class OrderController {
     private MessageSource messageSource;
 
     /**
-     * セッション上のカート情報を初期化します。
-     *
-     * @return カート情報
-     */
-    @ModelAttribute("cart")
-    public Map<Long, Integer> createCart() {
-        return new LinkedHashMap<>();
-    }
-
-    /**
      * 注文確認画面を表示します。
      *
-     * @param cart セッション上のカート
      * @param model 画面モデル
      * @return テンプレート名
      */
     @GetMapping("/orders/confirm")
     public String showOrderConfirm(
             @RequestParam(value = "discountCode", required = false) Long discountCode,
-            @ModelAttribute("cart") Map<Long, Integer> cart,
             Model model) {
         Long appliedDiscountCode = prepareOrderConfirmModel(model, discountCode);
         ensureOrderForm(model, appliedDiscountCode);
         ensureCouponApplyForm(model, appliedDiscountCode);
-        model.addAttribute("cart", cart);
         return "order-confirm";
     }
 
@@ -76,7 +60,6 @@ public class OrderController {
      *
      * @param couponApplyForm クーポン適用フォーム
      * @param bindingResult バリデーション結果
-     * @param cart セッション上のカート
      * @param model 画面モデル
      * @return 遷移先テンプレート名またはリダイレクト先
      */
@@ -84,12 +67,10 @@ public class OrderController {
     public String applyDiscountCode(
             @Valid @ModelAttribute("couponApplyForm") CouponApplyForm couponApplyForm,
             BindingResult bindingResult,
-            @ModelAttribute("cart") Map<Long, Integer> cart,
             Model model) {
         if (bindingResult.hasErrors()) {
             prepareOrderConfirmModel(model, null);
             ensureOrderForm(model, null);
-            model.addAttribute("cart", cart);
             return "order-confirm";
         }
 
@@ -97,7 +78,6 @@ public class OrderController {
         if (!cartService.isDiscountCodeAvailable(discountCode)) {
             prepareOrderConfirmModel(model, null);
             ensureOrderForm(model, null);
-            model.addAttribute("cart", cart);
             model.addAttribute("errorMessage", messageSource.getMessage("error.discountCode.invalid", null, Locale.getDefault()));
             return "order-confirm";
         }
@@ -127,7 +107,6 @@ public class OrderController {
      *
      * @param orderForm 注文フォーム
      * @param bindingResult バリデーション結果
-     * @param cart セッション上のカート
      * @param model 画面モデル
      * @return リダイレクト先またはテンプレート名
      */
@@ -135,17 +114,14 @@ public class OrderController {
     public String placeOrder(
             @Valid @ModelAttribute("orderForm") OrderForm orderForm,
             BindingResult bindingResult,
-            @ModelAttribute("cart") Map<Long, Integer> cart,
             Model model) {
         if (bindingResult.hasErrors()) {
             prepareOrderConfirmModel(model, orderForm.getDiscountCode());
             ensureCouponApplyForm(model, orderForm.getDiscountCode());
-            model.addAttribute("cart", cart);
             return "order-confirm";
         }
 
         Long orderId = orderService.placeOrder(orderForm);
-        cart.clear();
         return "redirect:/orders/complete/" + orderId;
     }
 
@@ -158,15 +134,14 @@ public class OrderController {
      */
     public Long prepareOrderConfirmModel(Model model, Long discountCode) {
         Long appliedDiscountCode = cartService.isDiscountCodeAvailable(discountCode) ? discountCode : null;
-        model.addAttribute("cartItems", cartService.getCartItems());
-        model.addAttribute("cartItemCount", cartService.getTotalQuantity());
-        model.addAttribute("totalAmount", cartService.getTotalAmount());
-        model.addAttribute("shippingAmount", cartService.getShippingAmount());
-        model.addAttribute("discountAmount",
-                appliedDiscountCode == null ? 0 : cartService.getDiscountAmount(appliedDiscountCode));
-        model.addAttribute("billingAmount",
-                appliedDiscountCode == null ? cartService.getBillingAmount()
-                        : cartService.getDiscountedBillingAmount(appliedDiscountCode));
+        CartSummaryModel cartSummary = cartService.getCartSummary(appliedDiscountCode);
+        model.addAttribute("cartItems", cartSummary.getCartItems());
+        model.addAttribute("cartItemCount", cartSummary.getTotalQuantity());
+        model.addAttribute("totalAmount", cartSummary.getTotalAmount());
+        model.addAttribute("shippingAmount", cartSummary.getShippingAmount());
+        model.addAttribute("discountAmount", cartSummary.getDiscountAmount());
+        model.addAttribute("billingAmount", cartSummary.getBillingAmount());
+        model.addAttribute("cart", cartSummary.getCartQuantities());
         model.addAttribute("appliedDiscountCode", appliedDiscountCode);
         return appliedDiscountCode;
     }

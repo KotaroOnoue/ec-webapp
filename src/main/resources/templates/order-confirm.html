@@ -69,6 +69,7 @@
                     <section aria-labelledby="coupon-title">
                         <h3 class="section-title" id="coupon-title">クーポン</h3>
                         <form class="coupon-form" th:action="@{/orders/confirm/coupon}" th:object="${couponApplyForm}" method="post">
+                            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                             <label class="field-label" for="discount-code">クーポン番号</label>
                             <div class="coupon-row">
                                 <input id="discount-code" th:field="*{discountCode}" type="text" inputmode="numeric" placeholder="数字で入力">
@@ -83,6 +84,7 @@
                     <section aria-labelledby="shipping-title">
                         <h3 class="section-title" id="shipping-title">配送先情報</h3>
                         <form class="form-grid" th:action="@{/orders}" th:object="${orderForm}" method="post">
+                            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                             <input type="hidden" th:field="*{discountCode}">
                             <div class="field-group">
                                 <label class="field-label" for="customer-name">氏名</label>

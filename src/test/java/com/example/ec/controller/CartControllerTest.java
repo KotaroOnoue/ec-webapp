@@ -2,6 +2,7 @@ package com.example.ec.controller;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -75,7 +76,7 @@ class CartControllerTest {
     @Test
     void updateCartItemRedirectsAndStoresQuantity() throws Exception {
         mockMvc.perform(post("/cart/items/1/update")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("productId", "1")
                         .param("quantity", "5"))
                 .andExpect(status().is3xxRedirection())
@@ -96,7 +97,7 @@ class CartControllerTest {
     @Test
     void updateCartItemRedirectsWithErrorWhenStockIsExceeded() throws Exception {
         mockMvc.perform(post("/cart/items/1/update")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("productId", "1")
                         .param("quantity", "11"))
                 .andExpect(status().is3xxRedirection())
@@ -112,7 +113,7 @@ class CartControllerTest {
     @Test
     void deleteCartItemRedirectsAndRemovesItem() throws Exception {
         mockMvc.perform(post("/cart/items/2/delete")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>()))
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/cart"));
 

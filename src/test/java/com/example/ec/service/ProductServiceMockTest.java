@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.example.ec.exception.InvalidCartQuantityException;
 import com.example.ec.exception.InsufficientStockException;
 import com.example.ec.exception.ProductUnavailableException;
 import com.example.ec.repository.CartRepository;
@@ -111,7 +112,7 @@ class ProductServiceMockTest {
      */
     @Test
     void validateAddToCartThrowsWhenQuantityIsLessThanOne() {
-        assertThrows(IllegalArgumentException.class, () -> productService.validateAddToCart(1L, 0, 0));
+        assertThrows(InvalidCartQuantityException.class, () -> productService.validateAddToCart(1L, 0, 0));
     }
 
     /**
@@ -119,7 +120,7 @@ class ProductServiceMockTest {
      */
     @Test
     void validateAddToCartThrowsWhenQuantityExceedsMaximum() {
-        assertThrows(IllegalArgumentException.class, () -> productService.validateAddToCart(1L, 0, 100));
+        assertThrows(InvalidCartQuantityException.class, () -> productService.validateAddToCart(1L, 0, 100));
     }
 
     /**

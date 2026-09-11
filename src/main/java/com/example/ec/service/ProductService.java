@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.ec.exception.InvalidCartQuantityException;
 import com.example.ec.repository.CartRepository;
 import com.example.ec.exception.InsufficientStockException;
 import com.example.ec.exception.ProductUnavailableException;
@@ -63,7 +64,7 @@ public class ProductService {
      */
     public void validateAddToCart(Long productId, int currentCartQuantity, int addQuantity) {
         if (addQuantity < 1 || addQuantity > 99) {
-            throw new IllegalArgumentException("数量は1から99の範囲で指定してください。");
+            throw new InvalidCartQuantityException("数量は1から99の範囲で指定してください。");
         }
 
         ProductEntity productEntity = productRepository.findByProductId(productId);
@@ -85,6 +86,16 @@ public class ProductService {
      */
     public void addCartItem(Long productId, Integer quantity) {
         cartRepository.insertCartItem(productId, quantity);
+    }
+
+    /**
+     * 指定した商品の現在カート数量を取得します。
+     *
+     * @param productId 商品ID
+     * @return 現在のカート数量
+     */
+    public int getCurrentCartQuantity(Long productId) {
+        return cartRepository.sumCartItemQuantityByProductId(productId);
     }
 
     /**

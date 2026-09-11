@@ -45,4 +45,15 @@
         WHERE
             product_id = #{productId}
     </select>
+
+    <update id="decreaseStock">
+        UPDATE
+            products
+        SET
+            stock = stock - #{quantity}
+        WHERE
+            product_id = #{productId}
+            AND status = 'ON_SALE'
+            AND stock >= #{quantity}
+    </update>
 </mapper>

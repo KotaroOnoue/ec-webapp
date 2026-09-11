@@ -2,6 +2,7 @@ package com.example.ec.repository;
 
 import java.util.List;
 
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Mapper;
 
 import com.example.ec.repository.entity.ProductEntity;
@@ -26,4 +27,13 @@ public interface ProductRepository {
      * @return 商品情報
      */
     ProductEntity findByProductId(Long productId);
+
+    /**
+     * 指定した商品IDの在庫を数量分だけ減算します。
+     *
+     * @param productId 商品ID
+     * @param quantity 減算数量
+     * @return 更新件数
+     */
+    int decreaseStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
 }

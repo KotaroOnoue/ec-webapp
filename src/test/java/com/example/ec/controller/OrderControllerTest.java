@@ -2,6 +2,7 @@ package com.example.ec.controller;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -101,7 +102,7 @@ class OrderControllerTest {
     @Test
     void placeOrderRedirectsToCompleteAndStoresOrder() throws Exception {
         mockMvc.perform(post("/orders")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "1500001")
@@ -124,7 +125,7 @@ class OrderControllerTest {
     @Test
     void placeOrderReturnsOrderConfirmWhenValidationFails() throws Exception {
         mockMvc.perform(post("/orders")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("discountCode", "1001")
                         .param("customerName", "")
                         .param("postalCode", "")

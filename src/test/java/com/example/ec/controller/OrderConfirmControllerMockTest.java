@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -34,9 +35,11 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import com.example.ec.controller.form.OrderForm;
+import com.example.ec.exception.CartEmptyException;
 import com.example.ec.service.CartService;
 import com.example.ec.service.OrderService;
 import com.example.ec.service.model.CartItemModel;
+import com.example.ec.service.model.CartSummaryModel;
 
 /**
  * 注文確認画面のControllerとThymeleaf表示をモックServiceで検証するテストです。
@@ -179,11 +182,7 @@ class OrderConfirmControllerMockTest {
      */
     @Test
     void showOrderConfirmDisplaysEmptyMessageWhenCartIsEmpty() throws Exception {
-        when(cartService.getCartItems()).thenReturn(List.of());
-        when(cartService.getTotalQuantity()).thenReturn(0);
-        when(cartService.getTotalAmount()).thenReturn(0);
-        when(cartService.getShippingAmount()).thenReturn(0);
-        when(cartService.getBillingAmount()).thenReturn(0);
+        stubCartSummary(List.of(), 0, 0, 0, 0, 0, null);
 
         mockMvc.perform(get("/orders/confirm"))
                 .andExpect(status().isOk())
@@ -217,7 +216,7 @@ class OrderConfirmControllerMockTest {
         stubFilledCart();
 
         mockMvc.perform(post("/orders/confirm/coupon")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("discountCode", "1001"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/orders/confirm?discountCode=1001"));
@@ -233,7 +232,7 @@ class OrderConfirmControllerMockTest {
         stubFilledCart();
 
         mockMvc.perform(post("/orders/confirm/coupon")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("discountCode", "9999"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("order-confirm"))
@@ -247,15 +246,10 @@ class OrderConfirmControllerMockTest {
      */
     @Test
     void placeOrderRedirectsToCompleteWhenInputIsValid() throws Exception {
-        MockHttpSession session = new MockHttpSession();
-        Map<Long, Integer> cart = new LinkedHashMap<>();
-        cart.put(1L, 2);
-        cart.put(2L, 1);
-        session.setAttribute("cart", cart);
         when(orderService.placeOrder(org.mockito.ArgumentMatchers.any(OrderForm.class))).thenReturn(5L);
 
         MvcResult result = mockMvc.perform(post("/orders")
-                        .session(session)
+                        .with(csrf())
                         .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "1500001")
@@ -265,9 +259,7 @@ class OrderConfirmControllerMockTest {
                 .andExpect(redirectedUrl("/orders/complete/5"))
                 .andReturn();
 
-        @SuppressWarnings("unchecked")
-        Map<Long, Integer> sessionCart = (Map<Long, Integer>) result.getRequest().getSession().getAttribute("cart");
-        assertTrue(sessionCart.isEmpty());
+            assertTrue(result.getResponse().getRedirectedUrl().endsWith("/orders/complete/5"));
         verify(orderService, times(1)).placeOrder(org.mockito.ArgumentMatchers.any(OrderForm.class));
     }
 
@@ -281,7 +273,7 @@ class OrderConfirmControllerMockTest {
         when(orderService.placeOrder(org.mockito.ArgumentMatchers.any(OrderForm.class))).thenReturn(7L);
 
         mockMvc.perform(post("/orders")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "1234567")
@@ -303,7 +295,7 @@ class OrderConfirmControllerMockTest {
         when(orderService.placeOrder(org.mockito.ArgumentMatchers.any(OrderForm.class))).thenReturn(8L);
 
         mockMvc.perform(post("/orders")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("discountCode", "1001")
                         .param("customerName", "山田 花子")
                         .param("postalCode", "7654321")
@@ -325,7 +317,7 @@ class OrderConfirmControllerMockTest {
         stubFilledCart();
 
         mockMvc.perform(post("/orders")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("discountCode", "1001")
                         .param("customerName", "")
                         .param("postalCode", "1500001")
@@ -348,7 +340,7 @@ class OrderConfirmControllerMockTest {
         stubFilledCart();
 
         mockMvc.perform(post("/orders")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "")
@@ -371,7 +363,7 @@ class OrderConfirmControllerMockTest {
         stubFilledCart();
 
         mockMvc.perform(post("/orders")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "123456")
@@ -394,7 +386,7 @@ class OrderConfirmControllerMockTest {
         stubFilledCart();
 
         mockMvc.perform(post("/orders")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "12345678")
@@ -417,7 +409,7 @@ class OrderConfirmControllerMockTest {
         stubFilledCart();
 
         mockMvc.perform(post("/orders")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "1500001")
@@ -440,7 +432,7 @@ class OrderConfirmControllerMockTest {
         stubFilledCart();
 
         mockMvc.perform(post("/orders")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "1500001")
@@ -463,7 +455,7 @@ class OrderConfirmControllerMockTest {
         stubFilledCart();
 
         mockMvc.perform(post("/orders")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "1500001")
@@ -484,10 +476,10 @@ class OrderConfirmControllerMockTest {
     @Test
     void placeOrderRedirectsToConfirmWithErrorWhenCartIsEmpty() throws Exception {
         when(orderService.placeOrder(org.mockito.ArgumentMatchers.any(OrderForm.class)))
-                .thenThrow(new IllegalArgumentException("カートに商品がありません。"));
+            .thenThrow(new CartEmptyException("カートに商品がありません。"));
 
         mockMvc.perform(post("/orders")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                .with(csrf())
                 .param("discountCode", "1001")
                         .param("customerName", "山田 太郎")
                         .param("postalCode", "1500001")
@@ -502,18 +494,43 @@ class OrderConfirmControllerMockTest {
      * テスト用のカート内容をモックします。
      */
     private void stubFilledCart() {
-        when(cartService.getCartItems()).thenReturn(List.of(
-                createCartItemModel(1L, "ワイヤレスイヤホン", 5980, 2),
-                createCartItemModel(2L, "ゲーミングマウス", 3980, 1)));
-        when(cartService.getTotalQuantity()).thenReturn(3);
-        when(cartService.getTotalAmount()).thenReturn(15940);
-        when(cartService.getShippingAmount()).thenReturn(1000);
-        when(cartService.getBillingAmount()).thenReturn(16940);
         when(cartService.isDiscountCodeAvailable(1001L)).thenReturn(true);
         when(cartService.isDiscountCodeAvailable(9999L)).thenReturn(false);
-        when(cartService.getDiscountAmount(1001L)).thenReturn(1694);
-        when(cartService.getDiscountedBillingAmount(1001L)).thenReturn(15246);
+        stubCartSummary(List.of(
+            createCartItemModel(1L, "ワイヤレスイヤホン", 5980, 2),
+            createCartItemModel(2L, "ゲーミングマウス", 3980, 1)), 3, 15940, 1000, 0, 16940, null);
+        stubCartSummary(List.of(
+            createCartItemModel(1L, "ワイヤレスイヤホン", 5980, 2),
+            createCartItemModel(2L, "ゲーミングマウス", 3980, 1)), 3, 15940, 1000, 1694, 15246, 1001L);
     }
+
+        /**
+         * テスト用のカート集計をスタブします。
+         *
+         * @param cartItems カート商品
+         * @param totalQuantity 合計数量
+         * @param totalAmount 商品合計
+         * @param shippingAmount 送料
+         * @param discountAmount 割引額
+         * @param billingAmount 請求金額
+         * @param discountCode クーポン番号
+         */
+        private void stubCartSummary(List<CartItemModel> cartItems, int totalQuantity, int totalAmount, int shippingAmount,
+            int discountAmount, int billingAmount, Long discountCode) {
+        CartSummaryModel cartSummaryModel = new CartSummaryModel();
+        Map<Long, Integer> cartQuantities = new LinkedHashMap<>();
+        for (CartItemModel cartItem : cartItems) {
+            cartQuantities.put(cartItem.getProductId(), cartItem.getQuantity());
+        }
+        cartSummaryModel.setCartItems(cartItems);
+        cartSummaryModel.setCartQuantities(cartQuantities);
+        cartSummaryModel.setTotalQuantity(totalQuantity);
+        cartSummaryModel.setTotalAmount(totalAmount);
+        cartSummaryModel.setShippingAmount(shippingAmount);
+        cartSummaryModel.setDiscountAmount(discountAmount);
+        cartSummaryModel.setBillingAmount(billingAmount);
+        when(cartService.getCartSummary(discountCode)).thenReturn(cartSummaryModel);
+        }
 
     /**
      * テスト用のカート商品モデルを生成します。

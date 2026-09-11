@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -34,6 +35,7 @@ import org.springframework.web.context.WebApplicationContext;
 import com.example.ec.exception.InsufficientStockException;
 import com.example.ec.service.CartService;
 import com.example.ec.service.model.CartItemModel;
+import com.example.ec.service.model.CartSummaryModel;
 
 /**
  * カート画面のControllerとThymeleaf表示をモックServiceで検証するテストです。
@@ -132,11 +134,7 @@ class CartControllerMockTest {
      */
     @Test
     void showCartDisplaysEmptyMessageWhenCartIsEmpty() throws Exception {
-        when(cartService.getCartItems()).thenReturn(List.of());
-        when(cartService.getTotalQuantity()).thenReturn(0);
-        when(cartService.getTotalAmount()).thenReturn(0);
-        when(cartService.getShippingAmount()).thenReturn(0);
-        when(cartService.getBillingAmount()).thenReturn(0);
+        stubCartSummary(List.of(), 0, 0, 0, 0);
 
         mockMvc.perform(get("/cart"))
                 .andExpect(status().isOk())
@@ -167,11 +165,8 @@ class CartControllerMockTest {
      */
     @Test
     void updateCartItemRedirectsWhenUpdateSucceeds() throws Exception {
-        Map<Long, Integer> cart = new LinkedHashMap<>();
-        cart.put(1L, 2);
-
         mockMvc.perform(post("/cart/items/1/update")
-                        .sessionAttr("cart", cart)
+                        .with(csrf())
                         .param("productId", "1")
                         .param("quantity", "5"))
                 .andExpect(status().is3xxRedirection())
@@ -187,11 +182,8 @@ class CartControllerMockTest {
      */
     @Test
     void updateCartItemUsesPathVariableProductId() throws Exception {
-        Map<Long, Integer> cart = new LinkedHashMap<>();
-        cart.put(1L, 2);
-
         mockMvc.perform(post("/cart/items/1/update")
-                        .sessionAttr("cart", cart)
+                        .with(csrf())
                         .param("productId", "2")
                         .param("quantity", "3"))
                 .andExpect(status().is3xxRedirection())
@@ -211,7 +203,7 @@ class CartControllerMockTest {
                 .when(cartService).updateCartItem(1L, 11);
 
         mockMvc.perform(post("/cart/items/1/update")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                .with(csrf())
                         .param("productId", "1")
                         .param("quantity", "11"))
                 .andExpect(status().is3xxRedirection())
@@ -229,7 +221,7 @@ class CartControllerMockTest {
         stubFilledCart();
 
         mockMvc.perform(post("/cart/items/1/update")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("productId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("cart"))
@@ -248,7 +240,7 @@ class CartControllerMockTest {
         stubFilledCart();
 
         mockMvc.perform(post("/cart/items/1/update")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("productId", "1")
                         .param("quantity", "0"))
                 .andExpect(status().isOk())
@@ -268,7 +260,7 @@ class CartControllerMockTest {
         stubFilledCart();
 
         mockMvc.perform(post("/cart/items/1/update")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>())
+                        .with(csrf())
                         .param("productId", "1")
                         .param("quantity", "100"))
                 .andExpect(status().isOk())
@@ -285,11 +277,8 @@ class CartControllerMockTest {
      */
     @Test
     void deleteCartItemRedirectsWhenDeletionSucceeds() throws Exception {
-        Map<Long, Integer> cart = new LinkedHashMap<>();
-        cart.put(2L, 1);
-
         mockMvc.perform(post("/cart/items/2/delete")
-                        .sessionAttr("cart", cart))
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/cart"));
 
@@ -304,7 +293,7 @@ class CartControllerMockTest {
     @Test
     void deleteCartItemRedirectsWhenTargetDoesNotExist() throws Exception {
         mockMvc.perform(post("/cart/items/999/delete")
-                        .sessionAttr("cart", new LinkedHashMap<Long, Integer>()))
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/cart"));
 
@@ -315,13 +304,35 @@ class CartControllerMockTest {
      * カートに商品がある場合の戻り値をスタブします。
      */
     private void stubFilledCart() {
-        when(cartService.getCartItems()).thenReturn(List.of(
+        stubCartSummary(List.of(
                 createCartItemModel(1L, "ワイヤレスイヤホン", 5980, 2, 11960),
-                createCartItemModel(2L, "ゲーミングマウス", 3980, 1, 3980)));
-        when(cartService.getTotalQuantity()).thenReturn(3);
-        when(cartService.getTotalAmount()).thenReturn(15940);
-        when(cartService.getShippingAmount()).thenReturn(1000);
-        when(cartService.getBillingAmount()).thenReturn(16940);
+                createCartItemModel(2L, "ゲーミングマウス", 3980, 1, 3980)), 3, 15940, 1000, 16940);
+    }
+
+    /**
+     * テスト用のカート集計をスタブします。
+     *
+     * @param cartItems カート商品一覧
+     * @param totalQuantity 合計数量
+     * @param totalAmount 商品合計
+     * @param shippingAmount 送料
+     * @param billingAmount 請求金額
+     */
+    private void stubCartSummary(List<CartItemModel> cartItems, int totalQuantity, int totalAmount, int shippingAmount,
+            int billingAmount) {
+        CartSummaryModel cartSummaryModel = new CartSummaryModel();
+        Map<Long, Integer> cartQuantities = new LinkedHashMap<>();
+        for (CartItemModel cartItem : cartItems) {
+            cartQuantities.put(cartItem.getProductId(), cartItem.getQuantity());
+        }
+        cartSummaryModel.setCartItems(cartItems);
+        cartSummaryModel.setCartQuantities(cartQuantities);
+        cartSummaryModel.setTotalQuantity(totalQuantity);
+        cartSummaryModel.setTotalAmount(totalAmount);
+        cartSummaryModel.setShippingAmount(shippingAmount);
+        cartSummaryModel.setDiscountAmount(0);
+        cartSummaryModel.setBillingAmount(billingAmount);
+        when(cartService.getCartSummary()).thenReturn(cartSummaryModel);
     }
 
     /**

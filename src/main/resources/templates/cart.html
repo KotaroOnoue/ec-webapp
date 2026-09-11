@@ -58,6 +58,7 @@
                                     <form class="quantity-form"
                                           th:action="@{/cart/items/{productId}/update(productId=${cartItem.productId})}"
                                           method="post">
+                                                                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                                         <input type="hidden" name="productId" th:value="${cartItem.productId}">
                                         <select th:name="quantity" th:aria-label="${cartItem.name} + 'の数量'">
                                             <option th:each="quantity : ${#numbers.sequence(1, 99)}"
@@ -73,6 +74,7 @@
                                     <form class="action-row"
                                           th:action="@{/cart/items/{productId}/delete(productId=${cartItem.productId})}"
                                           method="post">
+                                                                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                                         <button class="action-button danger" type="submit">削除</button>
                                     </form>
                                 </td>

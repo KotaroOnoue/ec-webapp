@@ -146,8 +146,7 @@ class OrderCompleteControllerMockTest {
     @Test
     void showOrderCompleteReturnsBadRequestWhenOrderIdIsNotNumeric() throws Exception {
         mockMvc.perform(get("/orders/complete/abc"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/products"));
+                .andExpect(status().isBadRequest());
     }
 
     /**

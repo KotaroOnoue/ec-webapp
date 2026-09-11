@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.example.ec.exception.InvalidCartQuantityException;
 import com.example.ec.service.CartService;
 import com.example.ec.exception.InsufficientStockException;
 import com.example.ec.exception.ProductUnavailableException;
@@ -41,6 +42,7 @@ class ProductServiceTest {
     @BeforeEach
     void setUp() {
         jdbcTemplate.update("DELETE FROM cart_item");
+        jdbcTemplate.update("UPDATE products SET stock = 10 WHERE product_id = 1");
     }
 
     /**
@@ -94,7 +96,7 @@ class ProductServiceTest {
      */
     @Test
     void validateAddToCartThrowsWhenQuantityIsLessThanOne() {
-        assertThrows(IllegalArgumentException.class, () -> productService.validateAddToCart(1L, 0, 0));
+        assertThrows(InvalidCartQuantityException.class, () -> productService.validateAddToCart(1L, 0, 0));
     }
 
     /**
